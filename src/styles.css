@@ -187,3 +187,87 @@
     animation: none;
   }
 }
+
+@keyframes card-deal-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96) rotate(0deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(var(--card-tilt, 0deg));
+  }
+}
+
+@keyframes card-flip-in {
+  from {
+    transform: rotateY(180deg);
+  }
+  to {
+    transform: rotateY(0deg);
+  }
+}
+
+@keyframes verdict-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes poster-in {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@utility card-deal {
+  animation: card-deal-in 220ms ease-out both;
+  animation-delay: var(--card-delay, 0ms);
+  transform: rotate(var(--card-tilt, 0deg));
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+@utility card-flipper {
+  transform-style: preserve-3d;
+  animation: card-flip-in 280ms ease-in-out both;
+  animation-delay: calc(var(--card-delay, 0ms) + 220ms);
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    transform: none;
+  }
+}
+
+@utility card-face {
+  backface-visibility: hidden;
+}
+
+@utility verdict-pop {
+  animation: verdict-pop 160ms ease-out both;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@utility poster-in {
+  animation: poster-in 180ms ease-out both;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
