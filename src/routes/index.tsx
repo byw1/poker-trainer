@@ -32,6 +32,7 @@ type Screen = "home" | "drill" | "chart";
 function App() {
   const [screen, setScreen] = useState<Screen>("home");
   const [stats, setStats] = useState<Stats>(() => freshStats());
+  const [daily, setDaily] = useState(false);
   const [chartFrom, setChartFrom] = useState<"home" | "drill">("home");
   const [chartPosition, setChartPosition] = useState<Position>("UTG");
   const drill = drills[0]!;
@@ -62,11 +63,26 @@ function App() {
       onHome={() => setScreen("home")}
       onChart={openChartFromDrill}
       suspended={screen === "chart"}
+      daily={daily}
+      onExitDaily={() => setDaily(false)}
     />
   );
 
   if (screen === "home") {
-    return <Home stats={stats} onStart={() => setScreen("drill")} onChart={openChartFromHome} />;
+    return (
+      <Home
+        stats={stats}
+        onStart={() => {
+          setDaily(false);
+          setScreen("drill");
+        }}
+        onDaily={() => {
+          setDaily(true);
+          setScreen("drill");
+        }}
+        onChart={openChartFromHome}
+      />
+    );
   }
 
   // Keep DrillScreen at the same tree position for drill and chart screens so
