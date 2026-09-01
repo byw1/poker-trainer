@@ -113,6 +113,7 @@ export function DrillScreen({
   const leaks = useMemo(() => leakHands(stats), [stats]);
   const leaksRef = useRef(leaks);
   leaksRef.current = leaks;
+  const verdictRef = useRef<HTMLDivElement>(null);
 
   const optionsFor = useCallback((m: Mode): GenerateOptions => {
     if (m === "ALL") return {};
@@ -126,6 +127,13 @@ export function DrillScreen({
       drill.generateQuestion(Math.random, optionsFor(initialMode)),
   );
   const [result, setResult] = useState<Result | null>(null);
+
+  useEffect(() => {
+    if (result && verdictRef.current) {
+      verdictRef.current.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
+    }
+  }, [result]);
+
   const seed = useMemo(() => Math.random(), [question]);
   const cards = handCards(question.prompt.hand, seed);
 
@@ -223,6 +231,7 @@ export function DrillScreen({
 
   const accuracy =
     stats.totalAnswered > 0 ? Math.round((stats.totalCorrect / stats.totalAnswered) * 100) : 0;
+  const handsLabel = stats.totalAnswered === 1 ? "1 hand" : `${stats.totalAnswered} hands`;
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[720px] flex-col px-6 py-8">
@@ -233,24 +242,37 @@ export function DrillScreen({
         >
           Poker Trainer
         </button>
-        <div className="flex items-baseline gap-6">
-          <span>{accuracy}% accurate</span>
-          <span>
-            Streak{" "}
-            <span className="text-[19px] font-bold text-[color:var(--ink)]">
-              {stats.currentStreak}
+        {stats.totalAnswered > 0 ? (
+          <div className="flex items-baseline gap-6">
+            <span>{accuracy}% accurate</span>
+            <span>
+              Streak{" "}
+              <span className="text-[19px] font-bold text-[color:var(--ink)]">
+                {stats.currentStreak}
+              </span>
             </span>
-          </span>
-          <span>{stats.totalAnswered} hands</span>
-        </div>
+            <span>{handsLabel}</span>
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-6 flex flex-col items-center gap-2">
         {daily ? (
           dailyDone ? null : (
-            <p className="text-[13px] tabular-nums text-[color:var(--graphite)]">
-              Today's 10 — {dailyIndex + 1} / {DAILY_COUNT}
-            </p>
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-[15px] font-bold text-[color:var(--ink)]">Today&rsquo;s 10</p>
+              <div className="flex w-[200px] gap-1" aria-label={`Progress ${dailyIndex + 1} of ${DAILY_COUNT}`}>
+                {Array.from({ length: DAILY_COUNT }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-1.5 flex-1 rounded-[1px]"
+                    style={{
+                      backgroundColor: i < dailyIndex + 1 ? "var(--ink)" : "var(--bone)",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
           )
         ) : (
         <div
@@ -352,7 +374,7 @@ export function DrillScreen({
         </div>
       ) : (
         <div className="mt-8 flex flex-col items-center">
-          <div className="flex items-center gap-3">
+          <div ref={verdictRef} className="flex items-center gap-3">
             <span
               aria-hidden
               className="flex h-8 w-8 items-center justify-center rounded-full text-[17px]"
