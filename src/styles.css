@@ -63,12 +63,12 @@
 
 :root {
   --radius: 0.25rem;
-  --paper: oklch(0.973 0.005 120);
-  --ink: oklch(0.235 0.014 220);
-  --graphite: oklch(0.556 0.011 220);
-  --spruce: oklch(0.392 0.055 160);
-  --crimson: oklch(0.474 0.156 25);
-  --bone: oklch(0.919 0.006 120);
+  --paper: #F6F7F5;
+  --ink: #171C1F;
+  --graphite: #6E767B;
+  --spruce: #24503F;
+  --crimson: #A83232;
+  --bone: #E4E6E1;
   --background: var(--paper);
   --foreground: var(--ink);
   --card: var(--paper);
@@ -166,5 +166,24 @@
   :focus-visible {
     outline: 2px solid var(--ink);
     outline-offset: 2px;
+  }
+}
+
+@keyframes card-snap-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@utility card-snap {
+  animation: card-snap-in 120ms ease-out both;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
   }
 }
