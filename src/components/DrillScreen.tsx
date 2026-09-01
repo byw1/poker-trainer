@@ -59,7 +59,7 @@ function Card({ rank, suit, tilt }: { rank: string; suit: string; tilt: number }
   );
 }
 
-type Mode = "ALL" | Position | "LEAKS";
+export type Mode = "ALL" | Position | "LEAKS";
 const MODES: Mode[] = ["ALL", ...POSITIONS, "LEAKS"];
 const MODE_LABEL: Record<string, string> = { ALL: "All", LEAKS: "Leaks" };
 
@@ -86,6 +86,8 @@ interface Props {
   /** Daily challenge: 10 fixed, date-seeded hands. */
   daily?: boolean;
   onExitDaily?: () => void;
+  /** Practice mode to start in (e.g. "LEAKS" from a Home leak row). */
+  initialMode?: Mode;
 }
 
 export function DrillScreen({
@@ -97,6 +99,7 @@ export function DrillScreen({
   suspended = false,
   daily = false,
   onExitDaily,
+  initialMode = "ALL",
 }: Props) {
   const dateKey = useMemo(() => todayKey(), []);
   const dailySet = useMemo(
@@ -106,7 +109,7 @@ export function DrillScreen({
   const [dailyIndex, setDailyIndex] = useState(0);
   const [dailyScore, setDailyScore] = useState(0);
   const dailyDone = daily && dailyIndex >= DAILY_COUNT;
-  const [mode, setMode] = useState<Mode>("ALL");
+  const [mode, setMode] = useState<Mode>(initialMode);
   const leaks = useMemo(() => leakHands(stats), [stats]);
   const leaksRef = useRef(leaks);
   leaksRef.current = leaks;
@@ -118,11 +121,14 @@ export function DrillScreen({
   }, []);
 
   const [question, setQuestion] = useState<Question>(
-    () => (daily ? dailySet[0] : undefined) ?? drill.generateQuestion(Math.random),
+    () =>
+      (daily ? dailySet[0] : undefined) ??
+      drill.generateQuestion(Math.random, optionsFor(initialMode)),
   );
   const [result, setResult] = useState<Result | null>(null);
   const seed = useMemo(() => Math.random(), [question]);
   const cards = handCards(question.prompt.hand, seed);
+
 
   const answer = useCallback(
     (action: Action) => {
@@ -159,13 +165,18 @@ export function DrillScreen({
     [drill, mode, optionsFor, daily, dailyIndex, dailySet],
   );
 
+  // Replay today's same 10 hands; Back home is what leaves daily mode.
   const playAgain = useCallback(() => {
     setDailyIndex(0);
     setDailyScore(0);
     setResult(null);
-    setQuestion(drill.generateQuestion(Math.random));
+    setQuestion(dailySet[0] ?? drill.generateQuestion(Math.random));
+  }, [drill, dailySet]);
+
+  const goHome = useCallback(() => {
     onExitDaily?.();
-  }, [drill, onExitDaily]);
+    onHome();
+  }, [onExitDaily, onHome]);
 
   const pickMode = useCallback(
     (m: Mode) => {
@@ -217,7 +228,7 @@ export function DrillScreen({
     <main className="mx-auto flex min-h-screen w-full max-w-[720px] flex-col px-6 py-8">
       <div className="flex items-center justify-between text-[13px] text-[color:var(--graphite)]">
         <button
-          onClick={onHome}
+          onClick={goHome}
           className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
         >
           Poker Trainer
@@ -295,7 +306,7 @@ export function DrillScreen({
               Play again
             </button>
             <button
-              onClick={onHome}
+              onClick={goHome}
               className="h-[56px] w-[200px] rounded-[3px] border border-[color:var(--bone)] text-[17px] font-medium text-[color:var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
             >
               Back home
@@ -359,6 +370,16 @@ export function DrillScreen({
           <p className="mt-2 max-w-[46ch] text-center text-[14px] text-[color:var(--graphite)]">
             {result.explanation}
           </p>
+
+          {!result.correct && !daily ? (
+            <button
+              onClick={() => pickMode(question.prompt.position)}
+              className="mt-3 text-[13px] text-[color:var(--graphite)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+            >
+              Practice this seat — {question.prompt.position}
+            </button>
+          ) : null}
+
 
           {result.visual ? (
             <div className="mt-7 flex w-full justify-center">
