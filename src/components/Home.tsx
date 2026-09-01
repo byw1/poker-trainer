@@ -9,10 +9,11 @@ interface Props {
   stats: Stats;
   onStart: () => void;
   onDaily: () => void;
+  onStartLeaks: () => void;
   onChart: () => void;
 }
 
-export function Home({ stats, onStart, onDaily, onChart }: Props) {
+export function Home({ stats, onStart, onDaily, onStartLeaks, onChart }: Props) {
   const today = todayKey();
   const todayBest = stats.dailyBest?.[today];
   const played = stats.totalAnswered > 0;
@@ -122,7 +123,7 @@ export function Home({ stats, onStart, onDaily, onChart }: Props) {
 
               {(() => {
                 const leaks = Object.entries(stats.byHand)
-                  .filter(([, v]) => v.answered >= 3)
+                  .filter(([, v]) => v.answered >= 3 && v.correct < v.answered)
                   .sort((a, b) => {
                     const accA = a[1].correct / a[1].answered;
                     const accB = b[1].correct / b[1].answered;
@@ -138,14 +139,16 @@ export function Home({ stats, onStart, onDaily, onChart }: Props) {
                       {leaks.map(([hand, v]) => {
                         const pct = Math.round((v.correct / v.answered) * 100);
                         return (
-                          <li
-                            key={hand}
-                            className="flex items-center justify-between rounded-[3px] bg-[color:var(--paper)] px-3 py-2 text-[14px]"
-                          >
-                            <span className="font-medium text-[color:var(--ink)]">{hand}</span>
-                            <span className="tabular-nums text-[color:var(--graphite)]">
-                              {v.answered} · {pct}%
-                            </span>
+                          <li key={hand}>
+                            <button
+                              onClick={onStartLeaks}
+                              className="flex w-full items-center justify-between rounded-[3px] bg-[color:var(--paper)] px-3 py-2 text-left text-[14px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+                            >
+                              <span className="font-medium text-[color:var(--ink)]">{hand}</span>
+                              <span className="tabular-nums text-[color:var(--graphite)]">
+                                {v.answered - v.correct} misses of {v.answered}, {pct}%
+                              </span>
+                            </button>
                           </li>
                         );
                       })}

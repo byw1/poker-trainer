@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Home } from "@/components/Home";
-import { DrillScreen } from "@/components/DrillScreen";
+import { DrillScreen, type Mode } from "@/components/DrillScreen";
 import { ChartViewer } from "@/components/ChartViewer";
 import { drills } from "@/drills";
 import { freshStats, loadStats, type Stats } from "@/lib/storage";
@@ -33,6 +33,7 @@ function App() {
   const [screen, setScreen] = useState<Screen>("home");
   const [stats, setStats] = useState<Stats>(() => freshStats());
   const [daily, setDaily] = useState(false);
+  const [drillMode, setDrillMode] = useState<Mode>("ALL");
   const [chartFrom, setChartFrom] = useState<"home" | "drill">("home");
   const [chartPosition, setChartPosition] = useState<Position>("UTG");
   const drill = drills[0]!;
@@ -65,6 +66,7 @@ function App() {
       suspended={screen === "chart"}
       daily={daily}
       onExitDaily={() => setDaily(false)}
+      initialMode={drillMode}
     />
   );
 
@@ -74,10 +76,17 @@ function App() {
         stats={stats}
         onStart={() => {
           setDaily(false);
+          setDrillMode("ALL");
+          setScreen("drill");
+        }}
+        onStartLeaks={() => {
+          setDaily(false);
+          setDrillMode("LEAKS");
           setScreen("drill");
         }}
         onDaily={() => {
           setDaily(true);
+          setDrillMode("ALL");
           setScreen("drill");
         }}
         onChart={openChartFromHome}

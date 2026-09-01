@@ -34,7 +34,3 @@ v1 training set for 6-max 100bb cash RFI. Frequencies (~13/18/26/44/40%) match c
 All charts live in `src/lib/charts.ts` as shorthand expanded by `src/lib/rangeParser.ts`. The big blind is excluded because it cannot open-raise.
 
 Everything is client-side; progress is stored in `localStorage` under one versioned key. No accounts, no backend, no analytics.
-
-## Screenshot
-
-A GIF or screenshot of the drill — hole cards, Fold/Raise keys, and the range ripple after an answer — belongs here once captured.
