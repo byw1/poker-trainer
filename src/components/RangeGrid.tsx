@@ -17,10 +17,18 @@ interface Props {
   highlight?: HandClass;
   /** Ripple the cells outward from the highlighted hand on mount. */
   reveal?: boolean;
+  /** Max rendered width in px. */
+  maxWidth?: number;
   onHoverCell?: (hand: HandClass | null) => void;
 }
 
-export function RangeGrid({ range, highlight, reveal = false, onHoverCell }: Props) {
+export function RangeGrid({
+  range,
+  highlight,
+  reveal = false,
+  maxWidth = 560,
+  onHoverCell,
+}: Props) {
   const [shown, setShown] = useState(!reveal);
   const reduced = prefersReducedMotion();
 
@@ -46,8 +54,8 @@ export function RangeGrid({ range, highlight, reveal = false, onHoverCell }: Pro
 
   return (
     <div
-      className="grid w-full max-w-[560px] border border-[color:color-mix(in_oklch,var(--ink)_35%,transparent)]"
-      style={{ gridTemplateColumns: "repeat(13, minmax(0, 1fr))" }}
+      className="grid w-full border border-[color:color-mix(in_oklch,var(--ink)_35%,transparent)]"
+      style={{ gridTemplateColumns: "repeat(13, minmax(0, 1fr))", maxWidth }}
       onMouseLeave={() => onHoverCell?.(null)}
       role="table"
       aria-label="13 by 13 preflop range grid"
