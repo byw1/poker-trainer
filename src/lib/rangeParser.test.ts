@@ -44,7 +44,7 @@ describe("range parser", () => {
   it("matches the labelled opening frequencies within tolerance", () => {
     const expected: Record<string, number> = { UTG: 13, MP: 18, CO: 26, BTN: 44, SB: 40 };
     for (const p of POSITIONS) {
-      expect(Math.abs(rangePercent(CHARTS[p]) - expected[p]!)).toBeLessThanOrEqual(6);
+      expect(Math.abs(rangePercent(CHARTS[p]) - expected[p]!)).toBeLessThanOrEqual(1.5);
     }
   });
 });

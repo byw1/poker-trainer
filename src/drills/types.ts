@@ -22,10 +22,17 @@ export interface Result {
   visual?: { type: "range"; range: Range; highlight: HandClass };
 }
 
+export interface GenerateOptions {
+  /** Lock the seat instead of picking one at random. */
+  position?: Position;
+  /** Hand classes to oversample (leak practice). */
+  leakHands?: HandClass[];
+}
+
 export interface Drill {
   id: string;
   name: string;
   description: string;
-  generateQuestion(rng: () => number): Question;
+  generateQuestion(rng: () => number, options?: GenerateOptions): Question;
   checkAnswer(q: Question, answer: Action): Result;
 }
