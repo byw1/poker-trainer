@@ -161,7 +161,9 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart }: Props) 
         </div>
 
         <div className="flex flex-col items-center">
-          <RangeGrid range={btn} maxWidth={520} />
+          <div className="poster-in">
+            <RangeGrid range={btn} maxWidth={520} />
+          </div>
           <p className="mt-3 self-stretch text-[13px] text-[color:var(--graphite)]">
             Button opening range — {rangePercent(btn).toFixed(1)}% of hands
           </p>
