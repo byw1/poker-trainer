@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RangeGrid } from "./RangeGrid";
-import { POSITION_LABEL, type Position } from "@/lib/charts";
-import type { Drill, Action, Question, Result } from "@/drills/types";
-import { recordAnswer, type Stats } from "@/lib/storage";
+import { Keycap, SeatRing } from "./Bits";
+import { POSITIONS, type Position } from "@/lib/charts";
+import type { Drill, Action, GenerateOptions, Question, Result } from "@/drills/types";
+import { recordAnswer, recordDaily, type Stats } from "@/lib/storage";
+import { DAILY_COUNT, dailyQuestions, todayKey } from "@/lib/daily";
 
-const SUITS = [
-  { symbol: "♠", key: "s" },
-  { symbol: "♥", key: "h" },
-  { symbol: "♦", key: "d" },
-  { symbol: "♣", key: "c" },
-];
+const SUITS = ["♠", "♥", "♦", "♣"];
+
+function isRed(suit: string) {
+  return suit === "♥" || suit === "♦";
+}
 
 function handCards(hand: string, rng: number): { rank: string; suit: string }[] {
   const a = hand[0] ?? "A";
@@ -17,9 +18,62 @@ function handCards(hand: string, rng: number): { rank: string; suit: string }[] 
   const i = Math.floor(rng * 4) % 4;
   const j = hand.endsWith("s") ? i : (i + 1 + Math.floor(rng * 3)) % 4;
   return [
-    { rank: a, suit: SUITS[i]!.symbol },
-    { rank: b, suit: SUITS[j]!.symbol },
+    { rank: a, suit: SUITS[i]! },
+    { rank: b, suit: SUITS[j]! },
   ];
+}
+
+function Card({ rank, suit, tilt }: { rank: string; suit: string; tilt: number }) {
+  const color = isRed(suit) ? "var(--crimson)" : "var(--ink)";
+  return (
+    <div style={{ transform: `rotate(${tilt}deg)` }}>
+      <div
+        className="card-snap relative h-[152px] w-[108px] rounded-[3px] border border-[color:color-mix(in_oklch,var(--ink)_45%,transparent)]"
+        style={{ backgroundColor: "var(--paper)" }}
+      >
+      <span
+        className="absolute left-2 top-2 text-left text-[22px] font-medium leading-[1.05]"
+        style={{ color }}
+      >
+        {rank}
+        <br />
+        {suit}
+      </span>
+      <span
+        className="absolute bottom-2 right-2 text-left text-[22px] font-medium leading-[1.05] rotate-180"
+        style={{ color }}
+      >
+        {rank}
+        <br />
+        {suit}
+      </span>
+      <span
+        aria-hidden
+        className="absolute inset-0 flex items-center justify-center text-[40px] leading-none"
+        style={{ color }}
+      >
+        {suit}
+      </span>
+      </div>
+    </div>
+  );
+}
+
+type Mode = "ALL" | Position | "LEAKS";
+const MODES: Mode[] = ["ALL", ...POSITIONS, "LEAKS"];
+const MODE_LABEL: Record<string, string> = { ALL: "All", LEAKS: "Leaks" };
+
+/** Hand classes the user has missed, worst accuracy first, then most misses. */
+function leakHands(stats: Stats): string[] {
+  return Object.entries(stats.byHand)
+    .filter(([, v]) => v.answered >= 1 && v.correct < v.answered)
+    .sort((a, b) => {
+      const accA = a[1].correct / a[1].answered;
+      const accB = b[1].correct / b[1].answered;
+      if (accA !== accB) return accA - accB;
+      return b[1].answered - b[1].correct - (a[1].answered - a[1].correct);
+    })
+    .map(([h]) => h);
 }
 
 interface Props {
@@ -29,10 +83,43 @@ interface Props {
   onHome: () => void;
   onChart: (position: Position) => void;
   suspended?: boolean;
+  /** Daily challenge: 10 fixed, date-seeded hands. */
+  daily?: boolean;
+  onExitDaily?: () => void;
 }
 
-export function DrillScreen({ drill, stats, onStats, onHome, onChart, suspended = false }: Props) {
-  const [question, setQuestion] = useState<Question>(() => drill.generateQuestion(Math.random));
+export function DrillScreen({
+  drill,
+  stats,
+  onStats,
+  onHome,
+  onChart,
+  suspended = false,
+  daily = false,
+  onExitDaily,
+}: Props) {
+  const dateKey = useMemo(() => todayKey(), []);
+  const dailySet = useMemo(
+    () => (daily ? dailyQuestions(drill, dateKey) : []),
+    [daily, drill, dateKey],
+  );
+  const [dailyIndex, setDailyIndex] = useState(0);
+  const [dailyScore, setDailyScore] = useState(0);
+  const dailyDone = daily && dailyIndex >= DAILY_COUNT;
+  const [mode, setMode] = useState<Mode>("ALL");
+  const leaks = useMemo(() => leakHands(stats), [stats]);
+  const leaksRef = useRef(leaks);
+  leaksRef.current = leaks;
+
+  const optionsFor = useCallback((m: Mode): GenerateOptions => {
+    if (m === "ALL") return {};
+    if (m === "LEAKS") return { leakHands: leaksRef.current };
+    return { position: m };
+  }, []);
+
+  const [question, setQuestion] = useState<Question>(
+    () => (daily ? dailySet[0] : undefined) ?? drill.generateQuestion(Math.random),
+  );
   const [result, setResult] = useState<Result | null>(null);
   const seed = useMemo(() => Math.random(), [question]);
   const cards = handCards(question.prompt.hand, seed);
@@ -42,15 +129,51 @@ export function DrillScreen({ drill, stats, onStats, onHome, onChart, suspended 
       if (result) return;
       const r = drill.checkAnswer(question, action);
       setResult(r);
-      onStats(recordAnswer(stats, question.prompt.position, question.prompt.hand, r.correct));
+      let updated = recordAnswer(stats, question.prompt.position, question.prompt.hand, r.correct);
+      if (daily) {
+        const score = dailyScore + (r.correct ? 1 : 0);
+        setDailyScore(score);
+        if (dailyIndex + 1 >= DAILY_COUNT) updated = recordDaily(updated, dateKey, score);
+      }
+      onStats(updated);
     },
-    [drill, question, result, stats, onStats],
+    [drill, question, result, stats, onStats, daily, dailyIndex, dailyScore, dateKey],
   );
 
-  const next = useCallback(() => {
+  const next = useCallback(
+    (m: Mode = mode) => {
+      if (daily) {
+        const i = dailyIndex + 1;
+        if (i >= DAILY_COUNT) {
+          setDailyIndex(i);
+          return;
+        }
+        setResult(null);
+        setDailyIndex(i);
+        setQuestion(dailySet[i] ?? drill.generateQuestion(Math.random));
+        return;
+      }
+      setResult(null);
+      setQuestion(drill.generateQuestion(Math.random, optionsFor(m)));
+    },
+    [drill, mode, optionsFor, daily, dailyIndex, dailySet],
+  );
+
+  const playAgain = useCallback(() => {
+    setDailyIndex(0);
+    setDailyScore(0);
     setResult(null);
     setQuestion(drill.generateQuestion(Math.random));
-  }, [drill]);
+    onExitDaily?.();
+  }, [drill, onExitDaily]);
+
+  const pickMode = useCallback(
+    (m: Mode) => {
+      setMode(m);
+      next(m);
+    },
+    [next],
+  );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -58,6 +181,22 @@ export function DrillScreen({ drill, stats, onStats, onHome, onChart, suspended 
       if (e.key === "?") {
         e.preventDefault();
         onChart(question.prompt.position);
+        return;
+      }
+      if (dailyDone) {
+        // The round is over; don't let Space re-trigger the focused button.
+        if (e.key === " ") e.preventDefault();
+        return;
+      }
+      const plain = !daily && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey;
+      if (plain && e.key >= "1" && e.key <= "5") {
+        e.preventDefault();
+        pickMode(POSITIONS[Number(e.key) - 1] as Position);
+        return;
+      }
+      if (plain && (e.key === "0" || e.key === "a")) {
+        e.preventDefault();
+        pickMode("ALL");
         return;
       }
       if (!result && (e.key === "f" || e.key === "F")) answer("fold");
@@ -69,13 +208,13 @@ export function DrillScreen({ drill, stats, onStats, onHome, onChart, suspended 
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [answer, next, result, onChart, suspended, question]);
+  }, [answer, next, pickMode, result, onChart, suspended, question, daily, dailyDone]);
 
   const accuracy =
     stats.totalAnswered > 0 ? Math.round((stats.totalCorrect / stats.totalAnswered) * 100) : 0;
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[640px] flex-col px-6 py-8">
+    <main className="mx-auto flex min-h-screen w-full max-w-[720px] flex-col px-6 py-8">
       <div className="flex items-center justify-between text-[13px] text-[color:var(--graphite)]">
         <button
           onClick={onHome}
@@ -83,57 +222,129 @@ export function DrillScreen({ drill, stats, onStats, onHome, onChart, suspended 
         >
           Poker Trainer
         </button>
-        <div className="flex gap-6">
+        <div className="flex items-baseline gap-6">
           <span>{accuracy}% accurate</span>
-          <span>Streak {stats.currentStreak}</span>
+          <span>
+            Streak{" "}
+            <span className="text-[19px] font-bold text-[color:var(--ink)]">
+              {stats.currentStreak}
+            </span>
+          </span>
           <span>{stats.totalAnswered} hands</span>
         </div>
       </div>
 
-      <div className="mt-14 text-center">
-        <p className="text-[13px] text-[color:var(--graphite)]">
-          {POSITION_LABEL[question.prompt.position]} ({question.prompt.position}) —{" "}
-          {question.prompt.context}
-        </p>
-        <div className="mt-4 flex items-center justify-center gap-4 text-[56px] font-medium leading-none text-[color:var(--ink)]">
-          {cards.map((c, i) => (
-            <span key={i}>
-              {c.rank}
-              <span
-                style={{
-                  color: c.suit === "♥" || c.suit === "♦" ? "var(--crimson)" : "var(--ink)",
-                }}
-              >
-                {c.suit}
-              </span>
-            </span>
+      <div className="mt-6 flex flex-col items-center gap-2">
+        {daily ? (
+          dailyDone ? null : (
+            <p className="text-[13px] tabular-nums text-[color:var(--graphite)]">
+              Today's 10 — {dailyIndex + 1} / {DAILY_COUNT}
+            </p>
+          )
+        ) : (
+        <div
+          role="group"
+          aria-label="Practice mode"
+          className="inline-flex overflow-hidden rounded-[3px] border border-[color:var(--bone)]"
+        >
+          {MODES.map((m) => (
+            <button
+              key={m}
+              onClick={() => pickMode(m)}
+              aria-pressed={m === mode}
+              className="border-r border-[color:var(--bone)] px-3 py-1.5 text-[13px] font-medium last:border-r-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--ink)]"
+              style={
+                m === mode
+                  ? { backgroundColor: "var(--ink)", color: "var(--paper)" }
+                  : { color: "var(--ink)" }
+              }
+            >
+              {MODE_LABEL[m] ?? m}
+            </button>
           ))}
         </div>
-        <p className="mt-3 text-[13px] text-[color:var(--graphite)]">{question.prompt.hand}</p>
+        )}
+        {!daily && mode === "LEAKS" && leaks.length === 0 ? (
+          <p className="text-[13px] text-[color:var(--graphite)]">
+            Play a round first — leaks appear after misses
+          </p>
+        ) : null}
+      </div>
+
+      {dailyDone ? (
+        <div className="mt-16 flex flex-col items-center">
+          <p className="text-[13px] text-[color:var(--graphite)]">Today&rsquo;s 10 &mdash; {dateKey}</p>
+          <p className="mt-2 text-[64px] font-bold leading-none tracking-[-0.03em] tabular-nums text-[color:var(--ink)]">
+            {dailyScore}/10
+          </p>
+          <p className="mt-4 max-w-[42ch] text-center text-[15px] text-[color:var(--graphite)]">
+            {dailyScore === 10
+              ? "Clean sweep. Every open matched the chart."
+              : dailyScore >= 8
+                ? "Solid round. A couple of borderline spots to review in the charts."
+                : dailyScore >= 5
+                  ? "Half the spots landed. Drill the seats that tripped you up."
+                  : "Rough round — open the charts and work one position at a time."}
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-4">
+            <button
+              onClick={playAgain}
+              className="h-[56px] w-[200px] rounded-[3px] text-[17px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+              style={{ backgroundColor: "var(--spruce)", color: "var(--paper)" }}
+            >
+              Play again
+            </button>
+            <button
+              onClick={onHome}
+              className="h-[56px] w-[200px] rounded-[3px] border border-[color:var(--bone)] text-[17px] font-medium text-[color:var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+            >
+              Back home
+            </button>
+          </div>
+        </div>
+      ) : (
+      <>
+      <div className="mt-10 flex flex-col items-center">
+        <div className="flex items-center gap-3">
+          <SeatRing active={question.prompt.position} size={104} />
+          <span className="text-[13px] text-[color:var(--graphite)]">
+            {question.prompt.context}
+          </span>
+        </div>
+
+        <div key={`${question.prompt.hand}-${seed}`} className="mt-6 flex items-center">
+          <Card rank={cards[0]!.rank} suit={cards[0]!.suit} tilt={-3} />
+          <div className="-ml-5">
+            <Card rank={cards[1]!.rank} suit={cards[1]!.suit} tilt={3} />
+          </div>
+        </div>
+        <p className="mt-4 text-[13px] text-[color:var(--graphite)]">{question.prompt.hand}</p>
       </div>
 
       {!result ? (
-        <div className="mt-12 flex justify-center gap-3">
+        <div className="mt-10 flex flex-wrap justify-center gap-4">
           <button
             autoFocus
             onClick={() => answer("fold")}
-            className="min-w-[140px] rounded-[3px] border border-[color:var(--bone)] px-6 py-3 text-[15px] font-medium text-[color:var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+            className="inline-flex h-[56px] w-[200px] items-center justify-center gap-3 rounded-[3px] text-[17px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+            style={{ backgroundColor: "var(--bone)", color: "var(--ink)" }}
           >
-            Fold <span className="ml-2 text-[color:var(--graphite)]">F</span>
+            Fold <Keycap>F</Keycap>
           </button>
           <button
             onClick={() => answer("raise")}
-            className="min-w-[140px] rounded-[3px] border border-[color:var(--ink)] px-6 py-3 text-[15px] font-medium text-[color:var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+            className="inline-flex h-[56px] w-[200px] items-center justify-center gap-3 rounded-[3px] text-[17px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+            style={{ backgroundColor: "var(--crimson)", color: "var(--paper)" }}
           >
-            Raise <span className="ml-2 text-[color:var(--graphite)]">R</span>
+            Raise <Keycap>R</Keycap>
           </button>
         </div>
       ) : (
-        <div className="mt-10 flex flex-col items-center">
-          <div className="flex items-center gap-2">
+        <div className="mt-8 flex flex-col items-center">
+          <div className="flex items-center gap-3">
             <span
               aria-hidden
-              className="flex h-6 w-6 items-center justify-center rounded-full text-[14px]"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-[17px]"
               style={{
                 backgroundColor: result.correct ? "var(--spruce)" : "var(--ink)",
                 color: "var(--paper)",
@@ -141,7 +352,7 @@ export function DrillScreen({ drill, stats, onStats, onHome, onChart, suspended 
             >
               {result.correct ? "✓" : "✕"}
             </span>
-            <p className="text-[17px] font-bold text-[color:var(--ink)]">
+            <p className="text-[24px] font-bold tracking-[-0.01em] text-[color:var(--ink)]">
               {result.correct ? "Correct" : `Incorrect — best is ${result.best}`}
             </p>
           </div>
@@ -150,28 +361,38 @@ export function DrillScreen({ drill, stats, onStats, onHome, onChart, suspended 
           </p>
 
           {result.visual ? (
-            <div className="mt-8 flex w-full justify-center">
-              <RangeGrid
-                range={result.visual.range}
-                highlight={result.visual.highlight}
-                reveal
-              />
+            <div className="mt-7 flex w-full justify-center">
+              <RangeGrid range={result.visual.range} highlight={result.visual.highlight} reveal />
             </div>
           ) : null}
 
           <button
             autoFocus
-            onClick={next}
-            className="mt-8 rounded-[3px] bg-[color:var(--spruce)] px-6 py-3 text-[15px] font-medium text-[color:var(--paper)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+            onClick={() => next()}
+            className="mt-8 inline-flex items-center gap-3 rounded-[3px] bg-[color:var(--spruce)] px-6 py-3 text-[15px] font-medium text-[color:var(--paper)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
           >
-            Next hand <span className="ml-2 opacity-70">Space</span>
+            Next hand <Keycap>Space</Keycap>
           </button>
         </div>
       )}
 
-      <p className="mt-auto pt-10 text-center text-[12px] text-[color:var(--graphite)]">
-        <span className="inline-flex gap-5"><span>F fold</span><span>R raise</span><span>Space next</span><span>? charts</span></span>
-      </p>
+      </>
+      )}
+
+      <div className="mt-auto flex flex-wrap justify-center gap-5 pt-10 text-[12px] text-[color:var(--graphite)]">
+        <span className="inline-flex items-center gap-2">
+          <Keycap>F</Keycap> fold
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <Keycap>R</Keycap> raise
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <Keycap>Space</Keycap> next
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <Keycap>?</Keycap> charts
+        </span>
+      </div>
     </main>
   );
 }
