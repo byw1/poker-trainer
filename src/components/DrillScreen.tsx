@@ -1,63 +1,68 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RangeGrid } from "./RangeGrid";
 import { Keycap, SeatRing } from "./Bits";
+import { PlayingCard, type PlayingCardRank, type PlayingCardSuit } from "./PlayingCard";
 import { POSITIONS, type Position } from "@/lib/charts";
 import type { Drill, Action, GenerateOptions, Question, Result } from "@/drills/types";
 import { recordAnswer, recordDaily, type Stats } from "@/lib/storage";
 import { DAILY_COUNT, dailyQuestions, todayKey } from "@/lib/daily";
 
-const SUITS = ["♠", "♥", "♦", "♣"];
+const SUITS: PlayingCardSuit[] = ["spades", "hearts", "diamonds", "clubs"];
 
-function isRed(suit: string) {
-  return suit === "♥" || suit === "♦";
+function toRank(c: string): PlayingCardRank {
+  return (c === "T" ? "10" : c) as PlayingCardRank;
 }
 
-function handCards(hand: string, rng: number): { rank: string; suit: string }[] {
+function handCards(hand: string, rng: number): { rank: PlayingCardRank; suit: PlayingCardSuit }[] {
   const a = hand[0] ?? "A";
   const b = hand[1] ?? "A";
   const i = Math.floor(rng * 4) % 4;
   const j = hand.endsWith("s") ? i : (i + 1 + Math.floor(rng * 3)) % 4;
   return [
-    { rank: a, suit: SUITS[i]! },
-    { rank: b, suit: SUITS[j]! },
+    { rank: toRank(a), suit: SUITS[i]! },
+    { rank: toRank(b), suit: SUITS[j]! },
   ];
 }
 
-function Card({ rank, suit, tilt }: { rank: string; suit: string; tilt: number }) {
-  const color = isRed(suit) ? "var(--crimson)" : "var(--ink)";
+/** Deals face-down, then flips face-up in place. */
+function DealtCard({
+  rank,
+  suit,
+  tilt,
+  delay,
+}: {
+  rank: PlayingCardRank;
+  suit: PlayingCardSuit;
+  tilt: number;
+  delay: number;
+}) {
   return (
-    <div style={{ transform: `rotate(${tilt}deg)` }}>
-      <div
-        className="card-snap relative h-[152px] w-[108px] rounded-[3px] border border-[color:color-mix(in_oklch,var(--ink)_45%,transparent)]"
-        style={{ backgroundColor: "var(--paper)" }}
-      >
-      <span
-        className="absolute left-2 top-2 text-left text-[22px] font-medium leading-[1.05]"
-        style={{ color }}
-      >
-        {rank}
-        <br />
-        {suit}
-      </span>
-      <span
-        className="absolute bottom-2 right-2 text-left text-[22px] font-medium leading-[1.05] rotate-180"
-        style={{ color }}
-      >
-        {rank}
-        <br />
-        {suit}
-      </span>
-      <span
-        aria-hidden
-        className="absolute inset-0 flex items-center justify-center text-[40px] leading-none"
-        style={{ color }}
-      >
-        {suit}
-      </span>
+    <div
+      className="card-deal"
+      style={
+        {
+          perspective: "900px",
+          "--card-tilt": `${tilt}deg`,
+          "--card-delay": `${delay}ms`,
+        } as React.CSSProperties
+      }
+    >
+      <div className="card-flipper relative">
+        <div className="card-face">
+          <PlayingCard rank={rank} suit={suit} width={128} />
+        </div>
+        <div
+          className="card-face absolute inset-0"
+          style={{ transform: "rotateY(180deg)" }}
+          aria-hidden
+        >
+          <PlayingCard rank={rank} suit={suit} width={128} faceDown />
+        </div>
       </div>
     </div>
   );
 }
+
 
 export type Mode = "ALL" | Position | "LEAKS";
 const MODES: Mode[] = ["ALL", ...POSITIONS, "LEAKS"];
@@ -346,11 +351,12 @@ export function DrillScreen({
         </div>
 
         <div key={`${question.prompt.hand}-${seed}`} className="mt-6 flex items-center">
-          <Card rank={cards[0]!.rank} suit={cards[0]!.suit} tilt={-3} />
-          <div className="-ml-5">
-            <Card rank={cards[1]!.rank} suit={cards[1]!.suit} tilt={3} />
+          <DealtCard rank={cards[0]!.rank} suit={cards[0]!.suit} tilt={-4} delay={0} />
+          <div className="-ml-6">
+            <DealtCard rank={cards[1]!.rank} suit={cards[1]!.suit} tilt={5} delay={70} />
           </div>
         </div>
+
         <p className="mt-4 text-[13px] text-[color:var(--graphite)]">{question.prompt.hand}</p>
       </div>
 
@@ -359,14 +365,14 @@ export function DrillScreen({
           <button
             autoFocus
             onClick={() => answer("fold")}
-            className="inline-flex h-[56px] w-[200px] items-center justify-center gap-3 rounded-[3px] text-[17px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+            className="inline-flex h-[56px] w-[200px] items-center justify-center gap-3 rounded-[3px] transition-transform active:scale-[0.98] text-[17px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
             style={{ backgroundColor: "var(--bone)", color: "var(--ink)" }}
           >
             Fold <Keycap>F</Keycap>
           </button>
           <button
             onClick={() => answer("raise")}
-            className="inline-flex h-[56px] w-[200px] items-center justify-center gap-3 rounded-[3px] text-[17px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+            className="inline-flex h-[56px] w-[200px] items-center justify-center gap-3 rounded-[3px] transition-transform active:scale-[0.98] text-[17px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
             style={{ backgroundColor: "var(--crimson)", color: "var(--paper)" }}
           >
             Raise <Keycap>R</Keycap>
@@ -377,7 +383,7 @@ export function DrillScreen({
           <div ref={verdictRef} className="flex items-center gap-3">
             <span
               aria-hidden
-              className="flex h-8 w-8 items-center justify-center rounded-full text-[17px]"
+              className="verdict-pop flex h-8 w-8 items-center justify-center rounded-full text-[17px]"
               style={{
                 backgroundColor: result.correct ? "var(--spruce)" : "var(--ink)",
                 color: "var(--paper)",
