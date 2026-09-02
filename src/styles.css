@@ -515,4 +515,78 @@
   }
 }
 
-@import "./motion-3d.css";
+/* --- Flat table + card motion ---------------------------------------- */
+
+.table-3d {
+  perspective: 1100px;
+}
+
+.table-plane {
+  transform: none;
+}
+
+.seat-3d {
+  transform: translate(-50%, -50%);
+  transition:
+    left 400ms cubic-bezier(0.23, 1, 0.32, 1),
+    top 400ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@keyframes card-deal-3d {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.94) rotate(0deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(var(--card-tilt, 0deg));
+  }
+}
+
+@utility card-deal-3d {
+  animation: card-deal-3d 280ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  animation-delay: var(--card-delay, 0ms);
+  transform: rotate(var(--card-tilt, 0deg));
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+.cards-3d {
+  transform-style: flat;
+}
+
+@utility cards-folded-3d {
+  opacity: 0.5;
+}
+
+@utility cards-raised-3d {
+  transform: translateY(-8px);
+}
+
+@keyframes result-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility result-fade-up {
+  animation: result-fade-up 220ms cubic-bezier(0.23, 1, 0.32, 1) both;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seat-3d {
+    transition: none;
+  }
+}

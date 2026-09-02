@@ -201,7 +201,7 @@ export function SeatRing({
 
   return (
     <div className="table-3d relative mx-auto max-w-full" style={{ width: w, height: h }}>
-      <div className="table-plane table-sway absolute inset-0">
+      <div className="table-plane absolute inset-0">
       <svg
         width={w}
         height={h}
