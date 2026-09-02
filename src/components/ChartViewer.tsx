@@ -4,7 +4,6 @@ import { CHARTS, POSITIONS, POSITION_LABEL, type Position } from "@/lib/charts";
 import { rangePercent } from "@/lib/rangeParser";
 import type { HandClass } from "@/lib/handClasses";
 import { GLOSSARY } from "@/lib/glossary";
-import { Tooltip } from "./Tooltip";
 import { SeatIcon } from "./Bits";
 
 interface Props {
@@ -42,18 +41,11 @@ export function ChartViewer({ initialPosition = "UTG", onBack }: Props) {
         className="no-scrollbar -mx-4 mt-5 flex max-w-full snap-x snap-mandatory items-stretch self-stretch overflow-x-auto px-4 sm:mx-0 sm:inline-flex sm:self-start sm:overflow-hidden sm:rounded-[3px] sm:border sm:border-[color:var(--bone)] sm:px-0"
       >
         {POSITIONS.map((p) => (
-          <Tooltip
-            key={p}
-            title={GLOSSARY[p]?.title ?? p}
-            text={GLOSSARY[p]?.tooltip ?? p}
-            seat={p}
-            focusable={false}
-            toggleOnClick={false}
-            infoMark
-          >
           <button
+            key={p}
             onClick={() => setPosition(p)}
             aria-pressed={p === position}
+            title={GLOSSARY[p]?.title ?? p}
             className="inline-flex h-11 shrink-0 snap-start items-center gap-1.5 whitespace-nowrap border border-[color:var(--bone)] px-4 text-[14px] font-medium sm:h-auto sm:border-0 sm:border-r sm:px-5 sm:py-2 sm:last:border-r-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--ink)]"
             style={
               p === position
@@ -64,8 +56,8 @@ export function ChartViewer({ initialPosition = "UTG", onBack }: Props) {
             <SeatIcon kind={p} size={16} />
             {p}
           </button>
-          </Tooltip>
         ))}
+
       </div>
 
       <p className="mt-3 text-[13px] text-[color:var(--graphite)]">
