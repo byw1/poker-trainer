@@ -183,10 +183,12 @@ export function SeatRing({
   width = 300,
   /** Dim the seats that already folded before the hero. */
   showFolds = true,
+  hoverHelp = true,
 }: {
   active?: Seat;
   width?: number;
   showFolds?: boolean;
+  hoverHelp?: boolean;
 }) {
   // Never wider than the phone viewport minus page gutters.
   const vw = useViewportWidth();
@@ -257,9 +259,10 @@ export function SeatRing({
               title={GLOSSARY[seat]?.title ?? seat}
               text={GLOSSARY[seat]?.tooltip ?? seat}
               seat={seat}
+              enabled={hoverHelp}
             >
               <span
-                className={`seat-chip flex cursor-help flex-col items-center gap-0.5 rounded-[4px] border text-center leading-tight ${compact ? "min-w-[40px] px-1 py-1" : "min-w-[52px] px-2 py-1"}`}
+                className={`seat-chip flex flex-col items-center gap-0.5 rounded-[4px] border text-center leading-tight ${hoverHelp ? "cursor-help" : ""} ${compact ? "min-w-[40px] px-1 py-1" : "min-w-[52px] px-2 py-1"}`}
                 style={style}
               >
                 <SeatIcon kind={seat} size={compact ? 16 : 20} folded={folded} />
