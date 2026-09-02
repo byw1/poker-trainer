@@ -10,6 +10,9 @@ import { BADGES, rankFor } from "@/lib/progress";
 import { Ticker } from "./Ticker";
 import { Button } from "./ui/Button";
 import { Logo, LogoMark } from "./Logo";
+import { useState } from "react";
+import { useDisplay } from "@/lib/display";
+import { DisplaySheet } from "./DisplaySheet";
 
 
 interface Props {
@@ -28,6 +31,8 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
   const accuracy = played ? Math.round((stats.totalCorrect / stats.totalAnswered) * 100) : 0;
   const btn = CHARTS.BTN;
   const { rank, next, progress } = rankFor(stats.xp);
+  const { display, set: setDisplay } = useDisplay();
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[1120px] flex-col justify-center px-4 py-10 sm:px-6 sm:py-16">
@@ -51,11 +56,14 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
           </p>
 
           <div className="order-4 mt-6 flex flex-col items-center lg:order-none lg:mt-4 lg:items-start">
-            <SeatRing active="BTN" width={300} showFolds={false} />
-            <p className="mt-2 text-[13px] text-[color:var(--graphite)]">
-              You are on the button. Seats go clockwise.
-            </p>
-
+            {display.table ? (
+              <>
+                <SeatRing active="BTN" width={300} showFolds={false} />
+                <p className="mt-2 text-[13px] text-[color:var(--graphite)]">
+                  You are on the button. Seats go clockwise.
+                </p>
+              </>
+            ) : null}
           </div>
 
           <p className="order-2 mt-4 max-w-[40ch] text-[15px] text-[color:var(--graphite)] sm:text-[16px]">
@@ -71,17 +79,20 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
             >
               Start drill
             </Button>
-            <div className="mx-auto grid w-full max-w-[320px] grid-cols-3 gap-2 lg:mx-0 lg:flex lg:max-w-none lg:gap-3">
+            <div className="mx-auto grid w-full max-w-[320px] grid-cols-2 gap-2 lg:mx-0 lg:flex lg:max-w-none lg:gap-3">
               <Button variant="outline" className="min-h-[44px] w-full rounded-full px-2 text-[13px] lg:w-auto lg:px-5 lg:text-[15px]" onClick={onDaily}>
                 Today&rsquo;s 10
               </Button>
               <Button variant="secondary" className="min-h-[44px] w-full rounded-full px-2 text-[13px] lg:w-auto lg:px-5 lg:text-[15px]" onClick={onChart}>
                 Charts
               </Button>
-              <Button variant="secondary" className="min-h-[44px] w-full rounded-full px-2 text-[13px] lg:w-auto lg:px-5 lg:text-[15px]" onClick={onGlossary}>
-                Glossary
-              </Button>
             </div>
+            <button
+              onClick={() => setSheetOpen(true)}
+              className="mx-auto inline-flex min-h-[44px] items-center gap-1.5 text-[13px] text-[color:var(--graphite)] underline underline-offset-4 lg:mx-0"
+            >
+              Display &amp; glossary
+            </button>
           </div>
 
 
@@ -98,19 +109,19 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
           <div className="order-5 mt-6 flex flex-wrap items-center gap-4 text-[13px] text-[color:var(--graphite)] lg:order-none">
             <span className="inline-flex items-center gap-2">
               <Keycap>F</Keycap>
-              <Tooltip title={GLOSSARY['FOLD']!.title} text={GLOSSARY['FOLD']!.tooltip}>
+              <Tooltip enabled={display.hoverHelp} title={GLOSSARY['FOLD']!.title} text={GLOSSARY['FOLD']!.tooltip}>
                 <span className="cursor-help">fold</span>
               </Tooltip>
             </span>
             <span className="inline-flex items-center gap-2">
               <Keycap>C</Keycap>
-              <Tooltip title={GLOSSARY['CALL']!.title} text={GLOSSARY['CALL']!.tooltip}>
+              <Tooltip enabled={display.hoverHelp} title={GLOSSARY['CALL']!.title} text={GLOSSARY['CALL']!.tooltip}>
                 <span className="cursor-help">call</span>
               </Tooltip>
             </span>
             <span className="inline-flex items-center gap-2">
               <Keycap>R</Keycap>
-              <Tooltip title={GLOSSARY['RAISE']!.title} text={GLOSSARY['RAISE']!.tooltip}>
+              <Tooltip enabled={display.hoverHelp} title={GLOSSARY['RAISE']!.title} text={GLOSSARY['RAISE']!.tooltip}>
                 <span className="cursor-help">raise</span>
               </Tooltip>
             </span>
@@ -181,7 +192,7 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
                     return (
                       <div key={p} className="rounded-[3px] bg-[color:var(--paper)] px-2 py-2">
                         <dt className="text-[11px] text-[color:var(--graphite)]">
-                          <Tooltip
+                          <Tooltip enabled={display.hoverHelp}
                             title={GLOSSARY[p]?.title ?? p}
                             text={GLOSSARY[p]?.tooltip ?? p}
                             seat={p}
@@ -215,7 +226,7 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
                 return (
                   <div className="mt-6">
                     <p className="text-[13px] text-[color:var(--graphite)]">
-                      <Tooltip title={GLOSSARY['LEAKS']!.title} text={GLOSSARY['LEAKS']!.tooltip}>
+                      <Tooltip enabled={display.hoverHelp} title={GLOSSARY['LEAKS']!.title} text={GLOSSARY['LEAKS']!.tooltip}>
                         <span className="cursor-help underline decoration-dotted decoration-[color:var(--bone)] underline-offset-4">
                           Leaks
                         </span>
@@ -255,6 +266,15 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
           </p>
         </div>
       </div>
+
+      {sheetOpen ? (
+        <DisplaySheet
+          display={display}
+          onChange={setDisplay}
+          onClose={() => setSheetOpen(false)}
+          links={[{ label: "Glossary", onClick: onGlossary }]}
+        />
+      ) : null}
     </main>
   );
 }
