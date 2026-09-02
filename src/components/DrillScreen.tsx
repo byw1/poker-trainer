@@ -11,6 +11,7 @@ import { Tooltip } from "./Tooltip";
 import { initSound, setSoundEnabled, sound } from "@/lib/sound";
 import { InsightCard } from "./InsightCard";
 import { Button } from "./ui/Button";
+import { useIsPhone } from "@/lib/useViewport";
 import { StreamText } from "./ui/StreamText";
 
 import { BADGES, type BadgeId } from "@/lib/progress";
@@ -38,11 +39,13 @@ function DealtCard({
   suit,
   tilt,
   delay,
+  width = 128,
 }: {
   rank: PlayingCardRank;
   suit: PlayingCardSuit;
   tilt: number;
   delay: number;
+  width?: number;
 }) {
   return (
     <div
@@ -57,14 +60,14 @@ function DealtCard({
     >
       <div className="card-flipper relative">
         <div className="card-face">
-          <PlayingCard rank={rank} suit={suit} width={128} />
+          <PlayingCard rank={rank} suit={suit} width={width} />
         </div>
         <div
           className="card-face absolute inset-0"
           style={{ transform: "rotateY(180deg)" }}
           aria-hidden
         >
-          <PlayingCard rank={rank} suit={suit} width={128} faceDown />
+          <PlayingCard rank={rank} suit={suit} width={width} faceDown />
         </div>
       </div>
     </div>
@@ -117,6 +120,7 @@ export function DrillScreen({
   onExitDaily,
   initialMode = "ALL",
 }: Props) {
+  const isPhone = useIsPhone();
   const dateKey = useMemo(() => todayKey(), []);
   const dailySet = useMemo(
     () => (daily ? dailyQuestions(drill, dateKey) : []),
@@ -297,8 +301,8 @@ export function DrillScreen({
   const handsLabel = stats.totalAnswered === 1 ? "1 hand" : `${stats.totalAnswered} hands`;
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[720px] flex-col px-6 py-8">
-      <div className="flex items-center justify-between text-[13px] text-[color:var(--graphite)]">
+    <main className="mx-auto flex min-h-screen w-full max-w-[720px] flex-col px-4 py-6 sm:px-6 sm:py-8">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px] text-[color:var(--graphite)]">
         <button
           onClick={goHome}
           className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
@@ -309,7 +313,7 @@ export function DrillScreen({
           onClick={toggleSound}
           aria-pressed={soundOn}
           aria-label={soundOn ? "Mute sound" : "Unmute sound"}
-          className="ml-3 mr-auto inline-flex h-7 w-7 items-center justify-center rounded-[4px] border border-[color:var(--bone)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-[4px] border border-[color:var(--bone)] sm:h-7 sm:w-7 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
           style={{ color: soundOn ? "var(--ink)" : "var(--graphite)" }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
@@ -339,8 +343,22 @@ export function DrillScreen({
             )}
           </svg>
         </button>
+        <div className="ml-auto flex items-center gap-2 sm:hidden">
+          <button
+            onClick={onGlossary}
+            className="inline-flex h-11 items-center rounded-full border border-[color:var(--bone)] px-3 text-[13px] text-[color:var(--ink)]"
+          >
+            Glossary
+          </button>
+          <button
+            onClick={() => onChart(question.prompt.position)}
+            className="inline-flex h-11 items-center rounded-full border border-[color:var(--bone)] px-3 text-[13px] text-[color:var(--ink)]"
+          >
+            Charts
+          </button>
+        </div>
         {stats.totalAnswered > 0 ? (
-          <div className="flex items-baseline gap-6">
+          <div className="flex w-full flex-wrap items-baseline gap-x-4 gap-y-1 sm:ml-auto sm:w-auto sm:gap-6">
             <span>{accuracy}% accurate</span>
             <span>
               Streak{" "}
@@ -358,7 +376,7 @@ export function DrillScreen({
           dailyDone ? null : (
             <div className="flex flex-col items-center gap-2">
               <p className="text-[15px] font-bold text-[color:var(--ink)]">Today&rsquo;s 10</p>
-              <div className="flex w-[200px] gap-1" aria-label={`Progress ${dailyIndex + 1} of ${DAILY_COUNT}`}>
+              <div className="flex w-[min(240px,100%)] gap-1" aria-label={`Progress ${dailyIndex + 1} of ${DAILY_COUNT}`}>
                 {Array.from({ length: DAILY_COUNT }).map((_, i) => (
                   <div
                     key={i}
@@ -375,7 +393,7 @@ export function DrillScreen({
         <div
           role="group"
           aria-label="Practice mode"
-          className="inline-flex overflow-hidden rounded-[3px] border border-[color:var(--bone)]"
+          className="no-scrollbar -mx-4 flex max-w-full snap-x snap-mandatory items-stretch overflow-x-auto px-4 sm:mx-0 sm:inline-flex sm:overflow-hidden sm:rounded-[3px] sm:border sm:border-[color:var(--bone)] sm:px-0"
         >
           {MODES.map((m) => (
             <Tooltip
@@ -390,7 +408,7 @@ export function DrillScreen({
             <button
               onClick={() => pickMode(m)}
               aria-pressed={m === mode}
-              className="inline-flex items-center gap-1.5 border-r border-[color:var(--bone)] px-3 py-1.5 text-[13px] font-medium last:border-r-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--ink)]"
+              className="inline-flex h-11 shrink-0 snap-start items-center gap-1.5 whitespace-nowrap border border-[color:var(--bone)] px-3 text-[13px] font-medium sm:h-auto sm:border-0 sm:border-r sm:py-1.5 sm:last:border-r-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--ink)]"
               style={
                 m === mode
                   ? { backgroundColor: "var(--ink)", color: "var(--paper)" }
@@ -405,7 +423,7 @@ export function DrillScreen({
         </div>
         )}
         {!daily ? (
-          <p className="text-[13px] text-[color:var(--graphite)]">
+          <p className="max-w-full text-center text-[13px] text-[color:var(--graphite)]">
             {GLOSSARY[mode]?.caption ?? ""}
           </p>
         ) : null}
@@ -419,7 +437,7 @@ export function DrillScreen({
       {dailyDone ? (
         <div className="mt-16 flex flex-col items-center">
           <p className="text-[13px] text-[color:var(--graphite)]">Today&rsquo;s 10 &mdash; {dateKey}</p>
-          <p className="mt-2 text-[64px] font-bold leading-none tracking-[-0.03em] tabular-nums text-[color:var(--ink)]">
+          <p className="mt-2 text-[48px] sm:text-[64px] font-bold leading-none tracking-[-0.03em] tabular-nums text-[color:var(--ink)]">
             {dailyScore}/10
           </p>
           <p className="mt-4 max-w-[42ch] text-center text-[15px] text-[color:var(--graphite)]">
@@ -431,11 +449,11 @@ export function DrillScreen({
                   ? "Half the spots landed. Drill the seats that tripped you up."
                   : "Rough round — open the charts and work one position at a time."}
           </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <Button variant="primary" size="lg" onClick={playAgain}>
+          <div className="mt-8 flex w-full flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4">
+            <Button variant="primary" size="lg" className="h-12 w-full sm:h-[56px] sm:w-[200px]" onClick={playAgain}>
               Play again
             </Button>
-            <Button variant="secondary" size="lg" onClick={goHome}>
+            <Button variant="secondary" size="lg" className="h-12 w-full sm:h-[56px] sm:w-[200px]" onClick={goHome}>
               Back home
             </Button>
 
@@ -445,7 +463,7 @@ export function DrillScreen({
       <>
       <div className="mt-10 flex flex-col items-center">
         <div className="flex flex-col items-center gap-2">
-          <SeatRing active={question.prompt.position} width={300} />
+          <SeatRing active={question.prompt.position} width={isPhone ? 240 : 300} />
           <Tooltip title={GLOSSARY['FOLDED_TO_YOU']!.title} text={GLOSSARY['FOLDED_TO_YOU']!.tooltip}>
             <span className="cursor-help text-[13px] text-[color:var(--graphite)] underline decoration-dotted decoration-[color:var(--bone)] underline-offset-4">
               {question.prompt.context}
@@ -460,9 +478,21 @@ export function DrillScreen({
             pressed === "raise" ? "cards-raised" : pressed ? "cards-folded" : ""
           }`}
         >
-          <DealtCard rank={cards[0]!.rank} suit={cards[0]!.suit} tilt={-4} delay={0} />
-          <div className="-ml-6">
-            <DealtCard rank={cards[1]!.rank} suit={cards[1]!.suit} tilt={5} delay={70} />
+          <DealtCard
+            rank={cards[0]!.rank}
+            suit={cards[0]!.suit}
+            tilt={-4}
+            delay={0}
+            width={isPhone ? 96 : 128}
+          />
+          <div className={isPhone ? "-ml-4" : "-ml-6"}>
+            <DealtCard
+              rank={cards[1]!.rank}
+              suit={cards[1]!.suit}
+              tilt={5}
+              delay={70}
+              width={isPhone ? 96 : 128}
+            />
           </div>
         </div>
 
@@ -476,25 +506,25 @@ export function DrillScreen({
       </div>
 
       {!result ? (
-        <div className="mt-10 flex flex-wrap justify-center gap-4">
-          <Tooltip title={GLOSSARY['FOLD']!.title} text={GLOSSARY['FOLD']!.tooltip} focusable={false} toggleOnClick={false}>
-          <Button autoFocus variant="fold" size="lg" onClick={() => answer("fold")}>
-            Fold <Keycap>F</Keycap>
+        <div className="mt-8 grid w-full grid-cols-3 gap-2 sm:mt-10 sm:flex sm:flex-wrap sm:justify-center sm:gap-4">
+          <Tooltip className="w-full" title={GLOSSARY['FOLD']!.title} text={GLOSSARY['FOLD']!.tooltip} focusable={false} toggleOnClick={false}>
+          <Button autoFocus variant="fold" size="lg" className="h-12 w-full text-[15px] sm:h-[56px] sm:w-[200px] sm:text-[17px]" onClick={() => answer("fold")}>
+            Fold <span className="hidden min-[400px]:inline-flex"><Keycap>F</Keycap></span>
           </Button>
           </Tooltip>
-          <Tooltip title={GLOSSARY['CALL']!.title} text={GLOSSARY['CALL']!.tooltip} focusable={false} toggleOnClick={false}>
-          <Button variant="secondary" size="lg" onClick={() => answer("call")}>
-            Call <Keycap>C</Keycap>
+          <Tooltip className="w-full" title={GLOSSARY['CALL']!.title} text={GLOSSARY['CALL']!.tooltip} focusable={false} toggleOnClick={false}>
+          <Button variant="secondary" size="lg" className="h-12 w-full text-[15px] sm:h-[56px] sm:w-[200px] sm:text-[17px]" onClick={() => answer("call")}>
+            Call <span className="hidden min-[400px]:inline-flex"><Keycap>C</Keycap></span>
           </Button>
           </Tooltip>
-          <Tooltip title={GLOSSARY['RAISE']!.title} text={GLOSSARY['RAISE']!.tooltip} focusable={false} toggleOnClick={false}>
-          <Button variant="raise" size="lg" onClick={() => answer("raise")}>
-            Raise <Keycap>R</Keycap>
+          <Tooltip className="w-full" title={GLOSSARY['RAISE']!.title} text={GLOSSARY['RAISE']!.tooltip} focusable={false} toggleOnClick={false}>
+          <Button variant="raise" size="lg" className="h-12 w-full text-[15px] sm:h-[56px] sm:w-[200px] sm:text-[17px]" onClick={() => answer("raise")}>
+            Raise <span className="hidden min-[400px]:inline-flex"><Keycap>R</Keycap></span>
           </Button>
           </Tooltip>
         </div>
       ) : (
-        <div className="mt-8 flex flex-col items-center">
+        <div className="mt-8 flex w-full min-w-0 flex-col items-center">
           <div
             ref={verdictRef}
             className={`flex items-center gap-3 ${result.correct ? "" : "verdict-shake"}`}
@@ -509,7 +539,7 @@ export function DrillScreen({
             >
               {result.correct ? "✓" : "✕"}
             </span>
-            <p className="text-[24px] font-bold tracking-[-0.01em] text-[color:var(--ink)]">
+            <p className="text-[19px] font-bold tracking-[-0.01em] text-[color:var(--ink)] sm:text-[24px]">
               {result.correct ? "Correct" : `Incorrect — best is ${result.best}`}
             </p>
           </div>
@@ -549,13 +579,13 @@ export function DrillScreen({
 
 
           {result.visual ? (
-            <div className="mt-7 flex w-full justify-center">
+            <div className="mt-7 flex w-full min-w-0 justify-center">
               <RangeGrid range={result.visual.range} highlight={result.visual.highlight} reveal />
             </div>
           ) : null}
 
-          <Button autoFocus variant="primary" className="mt-8" onClick={() => next()}>
-            Next hand <Keycap>Space</Keycap>
+          <Button autoFocus variant="primary" className="mt-8 min-h-[48px] w-full sm:w-auto" onClick={() => next()}>
+            Next hand <span className="fine-only"><Keycap>Space</Keycap></span>
           </Button>
 
         </div>
@@ -564,7 +594,7 @@ export function DrillScreen({
       </>
       )}
 
-      <div className="mt-auto flex flex-wrap justify-center gap-5 pt-10 text-[12px] text-[color:var(--graphite)]">
+      <div className="fine-only mt-auto flex flex-wrap justify-center gap-5 pt-10 text-[12px] text-[color:var(--graphite)]">
         <span className="inline-flex items-center gap-2">
           <Keycap>F</Keycap>
           <Tooltip title={GLOSSARY['FOLD']!.title} text={GLOSSARY['FOLD']!.tooltip}>
