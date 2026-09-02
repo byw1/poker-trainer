@@ -82,18 +82,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { title: "Poker Trainer" },
       { name: "description", content: "Preflop open-raise drills for 6-max cash games." },
-      { name: "author", content: "William Lee" },
+      { name: "author", content: "Lovable" },
       { property: "og:title", content: "Poker Trainer" },
       { property: "og:description", content: "Preflop open-raise drills for 6-max cash games." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
       { rel: "preconnect", href: "https://api.fontshare.com" },
       {
         rel: "stylesheet",

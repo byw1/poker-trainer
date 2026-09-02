@@ -19,7 +19,7 @@ export function ChartViewer({ initialPosition = "UTG", onBack }: Props) {
   const pct = rangePercent(range);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[860px] flex-col px-4 py-6 sm:px-6 sm:py-8">
+    <main className="mx-auto flex min-h-screen w-full max-w-[440px] flex-col items-center px-4 py-6 text-center lg:max-w-[860px] lg:items-stretch lg:text-left sm:px-6 sm:py-8">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <button
           onClick={onBack}
