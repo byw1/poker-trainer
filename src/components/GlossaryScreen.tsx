@@ -81,7 +81,7 @@ export function GlossaryScreen({ onBack }: { onBack: () => void }) {
   const rows = ROWS.filter((r) => filter === "All" || r.group === filter);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[720px] flex-col px-4 py-6 sm:px-6 sm:py-8">
+    <main className="mx-auto flex min-h-screen w-full max-w-[440px] flex-col items-center px-4 py-6 text-center lg:max-w-[720px] lg:items-stretch lg:text-left sm:px-6 sm:py-8">
       <button
         onClick={onBack}
         className="-ml-2 inline-flex h-11 items-center self-start px-2 text-[13px] text-[color:var(--graphite)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
