@@ -351,14 +351,15 @@ export function DrillScreen({
       ) : (
       <>
       <div className="mt-10 flex flex-col items-center">
-        <div className="flex items-center gap-3">
-          <SeatRing active={question.prompt.position} size={104} />
+        <div className="flex flex-col items-center gap-2">
+          <SeatRing active={question.prompt.position} width={300} />
           <Tooltip text={GLOSSARY['FOLDED_TO_YOU']!.tooltip}>
             <span className="cursor-help text-[13px] text-[color:var(--graphite)] underline decoration-dotted decoration-[color:var(--bone)] underline-offset-4">
               {question.prompt.context}
             </span>
           </Tooltip>
         </div>
+
 
         <div key={`${question.prompt.hand}-${seed}`} className="mt-6 flex items-center">
           <DealtCard rank={cards[0]!.rank} suit={cards[0]!.suit} tilt={-4} delay={0} />
