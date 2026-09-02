@@ -590,3 +590,13 @@
     transition: none;
   }
 }
+
+/* Phone action dock: sticky above the home indicator. */
+@utility action-dock {
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+}
+@media (min-width: 640px) {
+  .action-dock {
+    padding-bottom: 0;
+  }
+}
