@@ -461,7 +461,7 @@ export function DrillScreen({
       <>
       <div className="mt-10 flex flex-col items-center">
         <div className="flex flex-col items-center gap-2">
-          {display.table ? <SeatRing active={question.prompt.position} width={isPhone ? 240 : 300} /> : null}
+          {display.table ? <SeatRing active={question.prompt.position} width={isPhone ? 240 : 300} hoverHelp={display.hoverHelp} /> : null}
           <Tooltip
             title={GLOSSARY['FOLDED_TO_YOU']!.title}
             text={GLOSSARY['FOLDED_TO_YOU']!.tooltip}
@@ -514,7 +514,7 @@ export function DrillScreen({
           <Button autoFocus variant="fold" size="lg" className="h-[52px] w-full text-[16px] sm:h-[56px] sm:w-[160px] sm:text-[17px]" onClick={() => answer("fold")}>
             Fold <span className="hidden sm:inline-flex"><Keycap>F</Keycap></span>
           </Button>
-          <Button variant="secondary" size="lg" className="h-[52px] w-full text-[16px] sm:h-[56px] sm:w-[160px] sm:text-[17px]" onClick={() => answer("call")}>
+          <Button variant="call" size="lg" className="h-[52px] w-full text-[16px] sm:h-[56px] sm:w-[160px] sm:text-[17px]" onClick={() => answer("call")}>
             Call <span className="hidden sm:inline-flex"><Keycap>C</Keycap></span>
           </Button>
           <Button variant="raise" size="lg" className="h-[52px] w-full text-[16px] sm:h-[56px] sm:w-[160px] sm:text-[17px]" onClick={() => answer("raise")}>
@@ -617,7 +617,7 @@ export function DrillScreen({
           onChange={setDisplay}
           onClose={() => setSheetOpen(false)}
           links={[
-            { label: "Glossary", onClick: onGlossary },
+            { label: "Glossary", onClick: () => { setSheetOpen(false); onGlossary(); } },
             {
               label: "Charts",
               onClick: () => {
