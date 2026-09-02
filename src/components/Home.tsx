@@ -9,6 +9,7 @@ import { Tooltip } from "./Tooltip";
 import { BADGES, rankFor } from "@/lib/progress";
 import { Ticker } from "./Ticker";
 import { Button } from "./ui/Button";
+import { Logo, LogoMark } from "./Logo";
 
 
 interface Props {
@@ -31,12 +32,25 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[1120px] flex-col justify-center px-4 py-10 sm:px-6 sm:py-16">
       <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-14">
-        <div className="flex min-w-0 flex-col lg:block">
+        <div className="mx-auto flex w-full max-w-[440px] min-w-0 flex-col items-center text-center lg:mx-0 lg:block lg:max-w-none lg:text-left">
+          <div className="order-1 mb-3 lg:mb-4">
+            <span className="lg:hidden">
+              <Logo size={56} wordmark={false} />
+            </span>
+            <span className="hidden lg:inline-flex">
+              <LogoMark size={40} />
+            </span>
+          </div>
+
           <h1 className="order-1 text-[34px] font-bold leading-[1.02] tracking-[-0.03em] text-[color:var(--ink)] sm:text-[44px]">
             Poker Trainer
           </h1>
 
-          <div className="order-4 mt-6 lg:order-none lg:mt-4">
+          <p className="order-2 mt-1 text-[15px] font-medium text-[color:var(--spruce)]">
+            Open. Or don&rsquo;t.
+          </p>
+
+          <div className="order-4 mt-6 flex flex-col items-center lg:order-none lg:mt-4 lg:items-start">
             <SeatRing active="BTN" width={300} showFolds={false} />
             <p className="mt-2 text-[13px] text-[color:var(--graphite)]">
               You are on the button. Seats go clockwise.
@@ -48,20 +62,28 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
             Preflop open-raise drills for 6-max cash. Get a hand, fold or raise, see the range.
           </p>
 
-          <div className="order-3 mt-6 grid w-full grid-cols-1 gap-3 sm:mt-8 sm:flex sm:flex-wrap sm:items-center">
-            <Button variant="primary" size="xl" className="min-h-[48px] w-full sm:w-auto" onClick={onStart}>
+          <div className="order-3 mt-6 flex w-full flex-col items-center gap-3 sm:mt-8 lg:items-start">
+            <Button
+              variant="primary"
+              size="xl"
+              className="mx-auto min-h-[48px] w-full max-w-[320px] lg:mx-0 lg:w-auto"
+              onClick={onStart}
+            >
               Start drill
             </Button>
-            <Button variant="outline" size="xl" className="min-h-[48px] w-full sm:w-auto" onClick={onDaily}>
-              Today&rsquo;s 10
-            </Button>
-            <Button variant="secondary" size="xl" className="min-h-[48px] w-full sm:w-auto" onClick={onChart}>
-              View charts
-            </Button>
-            <Button variant="secondary" size="xl" className="min-h-[48px] w-full sm:w-auto" onClick={onGlossary}>
-              Glossary
-            </Button>
+            <div className="mx-auto grid w-full max-w-[320px] grid-cols-3 gap-2 lg:mx-0 lg:flex lg:max-w-none lg:gap-3">
+              <Button variant="outline" className="min-h-[44px] w-full rounded-full px-2 text-[13px] lg:w-auto lg:px-5 lg:text-[15px]" onClick={onDaily}>
+                Today&rsquo;s 10
+              </Button>
+              <Button variant="secondary" className="min-h-[44px] w-full rounded-full px-2 text-[13px] lg:w-auto lg:px-5 lg:text-[15px]" onClick={onChart}>
+                Charts
+              </Button>
+              <Button variant="secondary" className="min-h-[44px] w-full rounded-full px-2 text-[13px] lg:w-auto lg:px-5 lg:text-[15px]" onClick={onGlossary}>
+                Glossary
+              </Button>
+            </div>
           </div>
+
 
 
           {typeof todayBest === "number" ? (
@@ -224,11 +246,11 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
           ) : null}
         </div>
 
-        <div className="order-last flex min-w-0 flex-col items-center">
+        <div className="order-last mx-auto flex w-full max-w-[440px] min-w-0 flex-col items-center lg:max-w-none">
           <div className="poster-in w-full">
             <RangeGrid range={btn} maxWidth={520} />
           </div>
-          <p className="mt-3 self-stretch text-[13px] text-[color:var(--graphite)]">
+          <p className="mt-3 self-stretch text-center text-[13px] lg:text-left text-[color:var(--graphite)]">
             Button opening range — {rangePercent(btn).toFixed(1)}% of hands
           </p>
         </div>
