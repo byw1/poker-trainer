@@ -4,6 +4,8 @@ import { Keycap, SeatRing } from "./Bits";
 import { CHARTS, POSITIONS } from "@/lib/charts";
 import { rangePercent } from "@/lib/rangeParser";
 import { todayKey } from "@/lib/daily";
+import { GLOSSARY } from "@/lib/glossary";
+import { Tooltip } from "./Tooltip";
 
 interface Props {
   stats: Stats;
@@ -30,6 +32,9 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart }: Props) 
 
           <div className="mt-4">
             <SeatRing active="BTN" size={104} />
+            <p className="mt-2 text-[13px] text-[color:var(--graphite)]">
+              {GLOSSARY['BTN']!.caption}
+            </p>
           </div>
 
           <p className="mt-4 max-w-[40ch] text-[16px] text-[color:var(--graphite)]">
@@ -68,10 +73,16 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart }: Props) 
 
           <div className="mt-6 flex flex-wrap items-center gap-4 text-[13px] text-[color:var(--graphite)]">
             <span className="inline-flex items-center gap-2">
-              <Keycap>F</Keycap> fold
+              <Keycap>F</Keycap>
+              <Tooltip text={GLOSSARY['FOLD']!.tooltip}>
+                <span className="cursor-help">fold</span>
+              </Tooltip>
             </span>
             <span className="inline-flex items-center gap-2">
-              <Keycap>R</Keycap> raise
+              <Keycap>R</Keycap>
+              <Tooltip text={GLOSSARY['RAISE']!.tooltip}>
+                <span className="cursor-help">raise</span>
+              </Tooltip>
             </span>
             <span className="inline-flex items-center gap-2">
               <Keycap>?</Keycap> charts
@@ -110,7 +121,11 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart }: Props) 
                     return (
                       <div key={p} className="rounded-[3px] bg-[color:var(--paper)] px-2 py-2">
                         <dt className="text-[11px] text-[color:var(--graphite)]">
-                          {p}
+                          <Tooltip text={GLOSSARY[p]?.tooltip ?? p}>
+                            <span className="cursor-help underline decoration-dotted decoration-[color:var(--bone)] underline-offset-4">
+                              {p}
+                            </span>
+                          </Tooltip>
                         </dt>
                         <dd className="mt-1 text-[18px] font-semibold tabular-nums text-[color:var(--ink)]">
                           {pct === null ? "—" : `${pct}%`}
@@ -134,7 +149,13 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart }: Props) 
                 if (leaks.length === 0) return null;
                 return (
                   <div className="mt-6">
-                    <p className="text-[13px] text-[color:var(--graphite)]">Leaks</p>
+                    <p className="text-[13px] text-[color:var(--graphite)]">
+                      <Tooltip text={GLOSSARY['LEAKS']!.tooltip}>
+                        <span className="cursor-help underline decoration-dotted decoration-[color:var(--bone)] underline-offset-4">
+                          Leaks
+                        </span>
+                      </Tooltip>
+                    </p>
                     <ul className="mt-2 space-y-1">
                       {leaks.map(([hand, v]) => {
                         const pct = Math.round((v.correct / v.answered) * 100);

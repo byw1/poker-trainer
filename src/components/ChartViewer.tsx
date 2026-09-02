@@ -3,6 +3,8 @@ import { RangeGrid } from "./RangeGrid";
 import { CHARTS, POSITIONS, POSITION_LABEL, type Position } from "@/lib/charts";
 import { rangePercent } from "@/lib/rangeParser";
 import type { HandClass } from "@/lib/handClasses";
+import { GLOSSARY } from "@/lib/glossary";
+import { Tooltip } from "./Tooltip";
 
 interface Props {
   initialPosition?: Position;
@@ -39,8 +41,8 @@ export function ChartViewer({ initialPosition = "UTG", onBack }: Props) {
         className="mt-5 inline-flex self-start overflow-hidden rounded-[3px] border border-[color:var(--bone)]"
       >
         {POSITIONS.map((p) => (
+          <Tooltip key={p} text={GLOSSARY[p]?.tooltip ?? p} focusable={false}>
           <button
-            key={p}
             onClick={() => setPosition(p)}
             aria-pressed={p === position}
             className="border-r border-[color:var(--bone)] px-5 py-2 text-[14px] font-medium last:border-r-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--ink)]"
@@ -52,8 +54,13 @@ export function ChartViewer({ initialPosition = "UTG", onBack }: Props) {
           >
             {p}
           </button>
+          </Tooltip>
         ))}
       </div>
+
+      <p className="mt-3 text-[13px] text-[color:var(--graphite)]">
+        {GLOSSARY[position]?.caption} Opens {pct.toFixed(1)}% first in.
+      </p>
 
       <div className="mt-6 flex flex-col items-center">
         <RangeGrid range={range} maxWidth={760} onHoverCell={setHover} />

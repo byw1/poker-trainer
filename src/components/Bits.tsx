@@ -1,4 +1,6 @@
 import { POSITIONS, type Position } from "@/lib/charts";
+import { GLOSSARY } from "@/lib/glossary";
+import { Tooltip } from "./Tooltip";
 
 /** A small physical-looking keycap. */
 export function Keycap({ children }: { children: React.ReactNode }) {
@@ -62,7 +64,11 @@ export function SeatRing({
         })}
       </svg>
       {label && active ? (
-        <span className="text-[13px] font-medium text-[color:var(--ink)]">{active}</span>
+        <Tooltip text={GLOSSARY[active]?.tooltip ?? active}>
+          <span className="cursor-help text-[13px] font-medium text-[color:var(--ink)] underline decoration-dotted decoration-[color:var(--bone)] underline-offset-4">
+            {active}
+          </span>
+        </Tooltip>
       ) : null}
     </span>
   );
