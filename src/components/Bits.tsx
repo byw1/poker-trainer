@@ -1,4 +1,3 @@
-import { POSITIONS, type Position } from "@/lib/charts";
 import { GLOSSARY } from "@/lib/glossary";
 import { Tooltip } from "./Tooltip";
 
@@ -15,61 +14,95 @@ export function Keycap({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Seats in preflop action order, big blind last. */
+export type Seat = "UTG" | "MP" | "CO" | "BTN" | "SB" | "BB";
+const SEAT_ORDER: Seat[] = ["UTG", "MP", "CO", "BTN", "SB", "BB"];
+
 /**
- * Quiet 6-max seat glyph: six seats around an oval, the active one filled.
+ * A 6-max table diagram, always hero-centric: `active` sits at the bottom
+ * labelled "You", the other five rotate around the oval keeping clockwise
+ * order UTG -> MP -> CO -> BTN -> SB -> BB.
  */
 export function SeatRing({
-  active,
-  size = 92,
-  label = true,
+  active = "BTN",
+  width = 300,
+  /** Dim the seats that already folded before the hero. */
+  showFolds = true,
 }: {
-  active?: Position;
-  size?: number;
-  label?: boolean;
+  active?: Seat;
+  width?: number;
+  showFolds?: boolean;
 }) {
-  const h = size * 0.52;
-  const cx = size / 2;
+  const h = Math.round(width * 0.64);
+  const cx = width / 2;
   const cy = h / 2;
-  const rx = size / 2 - 7;
-  const ry = h / 2 - 7;
-  // Six seats: five named positions plus the big blind, laid out clockwise.
-  const seats: (Position | "BB")[] = [...POSITIONS, "BB"];
+  const rx = width / 2 - 34;
+  const ry = h / 2 - 24;
+  const heroIndex = SEAT_ORDER.indexOf(active);
 
   return (
-    <span className="inline-flex items-center gap-2">
-      <svg width={size} height={h} viewBox={`0 0 ${size} ${h}`} role="img" aria-label={active ? `${active} seat at a 6-max table` : "6-max table"}>
+    <div className="relative" style={{ width, height: h }}>
+      <svg
+        width={width}
+        height={h}
+        viewBox={`0 0 ${width} ${h}`}
+        role="img"
+        aria-label={`6-max table, you are in the ${active} seat`}
+      >
         <ellipse
           cx={cx}
           cy={cy}
           rx={rx}
           ry={ry}
-          fill="none"
+          fill="color-mix(in oklch, var(--bone) 35%, transparent)"
           stroke="var(--bone)"
           strokeWidth="1"
         />
-        {seats.map((s, i) => {
-          const a = -Math.PI / 2 + (i * 2 * Math.PI) / 6;
-          const x = cx + rx * Math.cos(a);
-          const y = cy + ry * Math.sin(a);
-          const on = s === active;
-          return (
-            <circle
-              key={s}
-              cx={x}
-              cy={y}
-              r={on ? 5 : 4}
-              fill={on ? "var(--ink)" : "var(--bone)"}
-            />
-          );
-        })}
       </svg>
-      {label && active ? (
-        <Tooltip text={GLOSSARY[active]?.tooltip ?? active}>
-          <span className="cursor-help text-[13px] font-medium text-[color:var(--ink)] underline decoration-dotted decoration-[color:var(--bone)] underline-offset-4">
-            {active}
-          </span>
-        </Tooltip>
-      ) : null}
-    </span>
+
+      {SEAT_ORDER.map((seat, i) => {
+        const step = (i - heroIndex + 6) % 6;
+        const a = ((90 - step * 60) * Math.PI) / 180;
+        const x = cx + rx * Math.cos(a);
+        const y = cy + ry * Math.sin(a);
+        const isHero = step === 0;
+        const folded = showFolds && !isHero && SEAT_ORDER.indexOf(seat) < heroIndex;
+
+        const style = isHero
+          ? { backgroundColor: "var(--ink)", color: "var(--paper)", borderColor: "var(--ink)" }
+          : folded
+            ? {
+                backgroundColor: "color-mix(in oklch, var(--bone) 45%, transparent)",
+                color: "var(--graphite)",
+                borderColor: "var(--bone)",
+              }
+            : {
+                backgroundColor: "var(--paper)",
+                color: "var(--ink)",
+                borderColor: "var(--graphite)",
+              };
+
+        return (
+          <div
+            key={seat}
+            className="absolute -translate-x-1/2 -translate-y-1/2"
+            style={{ left: x, top: y }}
+          >
+            <Tooltip text={GLOSSARY[seat]?.tooltip ?? seat}>
+              <span
+                className="flex min-w-[46px] cursor-help flex-col items-center rounded-[3px] border px-2 py-1 text-center leading-tight"
+                style={style}
+              >
+                {isHero ? <span className="text-[10px] font-medium">You</span> : null}
+                <span className="text-[12px] font-semibold tracking-[-0.01em]">{seat}</span>
+                {folded ? (
+                  <span className="text-[9px] text-[color:var(--graphite)]">folded</span>
+                ) : null}
+              </span>
+            </Tooltip>
+          </div>
+        );
+      })}
+    </div>
   );
 }

@@ -38,8 +38,10 @@ export const GLOSSARY: Record<string, Term> = {
   },
   BB: {
     caption: "Big blind — posts the full blind and acts last before the flop.",
-    tooltip: "Big blind. Posts the full blind and acts last before the flop.",
+    tooltip:
+      "Big blind. Already has a full bet in. When everyone folds to the BB, they check and see a flop — they never open-raise, which is why we don't drill this seat.",
   },
+
   LEAKS: {
     caption: "Leaks — hands you've been getting wrong. Practice until they stick.",
     tooltip: "Hands you've been getting wrong. Practice those until they stick.",
