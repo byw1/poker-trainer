@@ -31,10 +31,11 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart }: Props) 
           </h1>
 
           <div className="mt-4">
-            <SeatRing active="BTN" size={104} />
+            <SeatRing active="BTN" width={300} showFolds={false} />
             <p className="mt-2 text-[13px] text-[color:var(--graphite)]">
-              {GLOSSARY['BTN']!.caption}
+              You are on the button. Seats go clockwise.
             </p>
+
           </div>
 
           <p className="mt-4 max-w-[40ch] text-[16px] text-[color:var(--graphite)]">
