@@ -23,6 +23,7 @@ export const buttonVariants = cva(
         outline:
           "bg-[color:var(--paper)] text-[color:var(--ink)] border border-[color:var(--ink)] hover:opacity-85",
         fold: "bg-[color:var(--bone)] text-[color:var(--ink)] border border-transparent hover:opacity-90",
+        call: "bg-[color:var(--paper)] text-[color:var(--ink)] border border-[color:var(--ink)] hover:opacity-85",
         raise:
           "bg-[color:var(--crimson)] text-[color:var(--paper)] border border-transparent hover:opacity-90",
         quiet:
