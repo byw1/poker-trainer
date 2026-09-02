@@ -80,6 +80,12 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart }: Props) 
               </Tooltip>
             </span>
             <span className="inline-flex items-center gap-2">
+              <Keycap>C</Keycap>
+              <Tooltip title={GLOSSARY['CALL']!.title} text={GLOSSARY['CALL']!.tooltip}>
+                <span className="cursor-help">call</span>
+              </Tooltip>
+            </span>
+            <span className="inline-flex items-center gap-2">
               <Keycap>R</Keycap>
               <Tooltip title={GLOSSARY['RAISE']!.title} text={GLOSSARY['RAISE']!.tooltip}>
                 <span className="cursor-help">raise</span>
