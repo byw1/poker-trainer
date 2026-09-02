@@ -58,7 +58,7 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
           <div className="order-4 mt-6 flex flex-col items-center lg:order-none lg:mt-4 lg:items-start">
             {display.table ? (
               <>
-                <SeatRing active="BTN" width={300} showFolds={false} />
+                <SeatRing active="BTN" width={300} showFolds={false} hoverHelp={display.hoverHelp} />
                 <p className="mt-2 text-[13px] text-[color:var(--graphite)]">
                   You are on the button. Seats go clockwise.
                 </p>
@@ -272,7 +272,7 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
           display={display}
           onChange={setDisplay}
           onClose={() => setSheetOpen(false)}
-          links={[{ label: "Glossary", onClick: onGlossary }]}
+          links={[{ label: "Glossary", onClick: () => { setSheetOpen(false); onGlossary(); } }]}
         />
       ) : null}
     </main>
