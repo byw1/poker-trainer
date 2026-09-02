@@ -4,6 +4,20 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Design system definition.
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utility
+ * classes (e.g. --color-primary -> bg-primary, text-primary).
+ *
+ * The :root and .dark blocks define the actual color values using oklch.
+ * All colors MUST use oklch format.
+ *
+ * To add a new semantic color:
+ * 1. Add the variable to :root (light value) and .dark (dark value)
+ * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ */
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -159,5 +173,344 @@
   :focus-visible {
     outline: 2px solid var(--ink);
     outline-offset: 2px;
+  }
+}
+
+@keyframes card-snap-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@utility card-snap {
+  animation: card-snap-in 120ms ease-out both;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes card-deal-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96) rotate(0deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(var(--card-tilt, 0deg));
+  }
+}
+
+@keyframes card-flip-in {
+  from {
+    transform: rotateY(180deg);
+  }
+  to {
+    transform: rotateY(0deg);
+  }
+}
+
+@keyframes verdict-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes poster-in {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@utility card-deal {
+  animation: card-deal-in 220ms ease-out both;
+  animation-delay: var(--card-delay, 0ms);
+  transform: rotate(var(--card-tilt, 0deg));
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+@utility card-flipper {
+  transform-style: preserve-3d;
+  animation: card-flip-in 280ms ease-in-out both;
+  animation-delay: calc(var(--card-delay, 0ms) + 220ms);
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    transform: none;
+  }
+}
+
+@utility card-face {
+  backface-visibility: hidden;
+}
+
+@utility verdict-pop {
+  animation: verdict-pop 160ms ease-out both;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@utility poster-in {
+  animation: poster-in 180ms ease-out both;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes hover-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shake-x {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  45% {
+    transform: translateX(6px);
+  }
+  70% {
+    transform: translateX(-3px);
+  }
+}
+
+@utility hover-card {
+  animation: hover-card-in 120ms ease-out both;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@utility seat-slide {
+  transition:
+    left 350ms cubic-bezier(0.32, 0.72, 0.3, 1),
+    top 350ms cubic-bezier(0.32, 0.72, 0.3, 1);
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+@utility seat-chip {
+  transition: transform 140ms ease-out;
+
+  &:hover {
+    transform: scale(1.06);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    &:hover {
+      transform: none;
+    }
+  }
+}
+
+@utility verdict-shake {
+  animation: shake-x 260ms ease-out both;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@utility cards-stage {
+  transition:
+    opacity 180ms ease-out,
+    transform 180ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+@utility cards-folded {
+  opacity: 0.5;
+}
+
+@utility cards-raised {
+  transform: translateY(-6px);
+}
+
+/* Touch affordance only: pointing devices get hover instead. */
+@utility info-mark {
+  @media (hover: hover) and (pointer: fine) {
+    display: none;
+  }
+}
+
+@keyframes insight-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@utility insight-in {
+  animation: insight-in 160ms ease-out both;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@utility trace-in {
+  animation: insight-in 140ms ease-out both;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@utility meter-fill {
+  transition: width 400ms cubic-bezier(0.32, 0.72, 0.3, 1);
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+@utility chip {
+  align-items: center;
+  border: 1px solid var(--bone);
+  border-radius: 999px;
+  color: var(--graphite);
+  font-size: 11px;
+  line-height: 1;
+  padding: 4px 8px;
+}
+
+@utility pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--bone);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  transition:
+    background-color 140ms ease-out,
+    color 140ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+@layer base {
+  :root {
+    --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+    --dur-hover: 150ms;
+    --dur-layout: 220ms;
+  }
+}
+
+.trace-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--dur-layout) var(--ease-out-strong),
+    opacity var(--dur-hover) ease-out;
+}
+
+.trace-collapse[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.trace-caret {
+  display: inline-block;
+  transition: transform var(--dur-hover) var(--ease-out-strong);
+}
+
+.trace-caret[data-open="true"] {
+  transform: rotate(90deg);
+}
+
+.stream-tail {
+  filter: blur(1.5px);
+  opacity: 0.7;
+}
+
+.stream-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: var(--graphite);
+  opacity: 0;
+}
+
+.stream-caret.is-streaming {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trace-collapse,
+  .trace-caret {
+    transition: none;
+  }
+
+  .stream-tail {
+    filter: none;
+    opacity: 1;
+  }
+
+  .stream-caret {
+    display: none;
+  }
+}
+
+/* --- Mobile helpers ------------------------------------------------- */
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Keyboard legends etc: irrelevant on touch devices. */
+@utility fine-only {
+  @media (pointer: coarse) {
+    display: none !important;
   }
 }
