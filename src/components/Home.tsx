@@ -29,14 +29,14 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
   const { rank, next, progress } = rankFor(stats.xp);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[1120px] flex-col justify-center px-6 py-16">
-      <div className="grid items-center gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
-        <div>
-          <h1 className="text-[44px] font-bold leading-[1.02] tracking-[-0.03em] text-[color:var(--ink)]">
+    <main className="mx-auto flex min-h-screen w-full max-w-[1120px] flex-col justify-center px-4 py-10 sm:px-6 sm:py-16">
+      <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-14">
+        <div className="flex min-w-0 flex-col lg:block">
+          <h1 className="order-1 text-[34px] font-bold leading-[1.02] tracking-[-0.03em] text-[color:var(--ink)] sm:text-[44px]">
             Poker Trainer
           </h1>
 
-          <div className="mt-4">
+          <div className="order-4 mt-6 lg:order-none lg:mt-4">
             <SeatRing active="BTN" width={300} showFolds={false} />
             <p className="mt-2 text-[13px] text-[color:var(--graphite)]">
               You are on the button. Seats go clockwise.
@@ -44,28 +44,28 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
 
           </div>
 
-          <p className="mt-4 max-w-[40ch] text-[16px] text-[color:var(--graphite)]">
+          <p className="order-2 mt-4 max-w-[40ch] text-[15px] text-[color:var(--graphite)] sm:text-[16px]">
             Preflop open-raise drills for 6-max cash. Get a hand, fold or raise, see the range.
           </p>
 
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Button variant="primary" size="xl" onClick={onStart}>
+          <div className="order-3 mt-6 grid w-full grid-cols-1 gap-3 sm:mt-8 sm:flex sm:flex-wrap sm:items-center">
+            <Button variant="primary" size="xl" className="min-h-[48px] w-full sm:w-auto" onClick={onStart}>
               Start drill
             </Button>
-            <Button variant="outline" size="xl" onClick={onDaily}>
+            <Button variant="outline" size="xl" className="min-h-[48px] w-full sm:w-auto" onClick={onDaily}>
               Today&rsquo;s 10
             </Button>
-            <Button variant="secondary" size="xl" onClick={onChart}>
+            <Button variant="secondary" size="xl" className="min-h-[48px] w-full sm:w-auto" onClick={onChart}>
               View charts
             </Button>
-            <Button variant="secondary" size="xl" onClick={onGlossary}>
+            <Button variant="secondary" size="xl" className="min-h-[48px] w-full sm:w-auto" onClick={onGlossary}>
               Glossary
             </Button>
           </div>
 
 
           {typeof todayBest === "number" ? (
-            <p className="mt-4 text-[13px] text-[color:var(--graphite)]">
+            <p className="order-5 mt-4 text-[13px] text-[color:var(--graphite)] lg:order-none">
               Today&rsquo;s best{" "}
               <span className="text-[15px] font-bold tabular-nums text-[color:var(--ink)]">
                 {todayBest}/10
@@ -73,7 +73,7 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
             </p>
           ) : null}
 
-          <div className="mt-6 flex flex-wrap items-center gap-4 text-[13px] text-[color:var(--graphite)]">
+          <div className="order-5 mt-6 flex flex-wrap items-center gap-4 text-[13px] text-[color:var(--graphite)] lg:order-none">
             <span className="inline-flex items-center gap-2">
               <Keycap>F</Keycap>
               <Tooltip title={GLOSSARY['FOLD']!.title} text={GLOSSARY['FOLD']!.tooltip}>
@@ -98,7 +98,7 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
           </div>
 
           {played ? (
-            <div className="mt-6 flex flex-wrap items-center gap-2">
+            <div className="order-5 mt-6 flex flex-wrap items-center gap-2 lg:order-none">
               <span
                 className="pill"
                 style={{ borderColor: "var(--spruce)", color: "var(--spruce)" }}
@@ -128,23 +128,23 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
           ) : null}
 
           {played ? (
-            <div className="mt-10 border-t border-[color:var(--bone)] pt-6">
-              <dl className="flex gap-12">
+            <div className="order-5 mt-10 border-t border-[color:var(--bone)] pt-6 lg:order-none">
+              <dl className="grid grid-cols-3 gap-4 sm:flex sm:gap-12">
                 <div>
                   <dt className="text-[13px] text-[color:var(--graphite)]">Accuracy</dt>
-                  <dd className="text-[40px] font-bold leading-none tracking-[-0.02em] text-[color:var(--ink)]">
+                  <dd className="text-[28px] font-bold leading-none tracking-[-0.02em] text-[color:var(--ink)] sm:text-[40px]">
                     {accuracy}%
                   </dd>
                 </div>
                 <div>
                   <dt className="text-[13px] text-[color:var(--graphite)]">Streak</dt>
-                  <dd className="text-[40px] font-bold leading-none tracking-[-0.02em] text-[color:var(--ink)]">
+                  <dd className="text-[28px] font-bold leading-none tracking-[-0.02em] text-[color:var(--ink)] sm:text-[40px]">
                     {stats.currentStreak}
                   </dd>
                 </div>
                 <div>
                   <dt className="text-[13px] text-[color:var(--graphite)]">Hands</dt>
-                  <dd className="text-[40px] font-bold leading-none tracking-[-0.02em] text-[color:var(--ink)]">
+                  <dd className="text-[28px] font-bold leading-none tracking-[-0.02em] text-[color:var(--ink)] sm:text-[40px]">
                     {stats.totalAnswered}
                   </dd>
                 </div>
@@ -152,7 +152,7 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
 
               <div className="mt-6">
                 <p className="text-[13px] text-[color:var(--graphite)]">By position</p>
-                <dl className="mt-2 grid grid-cols-5 gap-2">
+                <dl className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-5">
                   {POSITIONS.map((p) => {
                     const { answered, correct } = stats.byPosition[p]!;
                     const pct = answered > 0 ? Math.round((correct / answered) * 100) : null;
@@ -206,7 +206,7 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
                           <li key={hand}>
                             <button
                               onClick={onStartLeaks}
-                              className="flex w-full items-center justify-between rounded-[3px] bg-[color:var(--paper)] px-3 py-2 text-left text-[14px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+                              className="flex min-h-[44px] w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[3px] bg-[color:var(--paper)] px-3 py-2 text-left text-[14px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
                             >
                               <span className="font-medium text-[color:var(--ink)]">{hand}</span>
                               <span className="tabular-nums text-[color:var(--graphite)]">
@@ -224,8 +224,8 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
           ) : null}
         </div>
 
-        <div className="flex flex-col items-center">
-          <div className="poster-in">
+        <div className="order-last flex min-w-0 flex-col items-center">
+          <div className="poster-in w-full">
             <RangeGrid range={btn} maxWidth={520} />
           </div>
           <p className="mt-3 self-stretch text-[13px] text-[color:var(--graphite)]">
