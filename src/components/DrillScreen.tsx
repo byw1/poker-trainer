@@ -6,6 +6,8 @@ import { POSITIONS, type Position } from "@/lib/charts";
 import type { Drill, Action, GenerateOptions, Question, Result } from "@/drills/types";
 import { recordAnswer, recordDaily, type Stats } from "@/lib/storage";
 import { DAILY_COUNT, dailyQuestions, todayKey } from "@/lib/daily";
+import { GLOSSARY, describeHand } from "@/lib/glossary";
+import { Tooltip } from "./Tooltip";
 
 const SUITS: PlayingCardSuit[] = ["spades", "hearts", "diamonds", "clubs"];
 
@@ -286,8 +288,8 @@ export function DrillScreen({
           className="inline-flex overflow-hidden rounded-[3px] border border-[color:var(--bone)]"
         >
           {MODES.map((m) => (
+            <Tooltip key={m} text={GLOSSARY[m]?.tooltip ?? m} focusable={false}>
             <button
-              key={m}
               onClick={() => pickMode(m)}
               aria-pressed={m === mode}
               className="border-r border-[color:var(--bone)] px-3 py-1.5 text-[13px] font-medium last:border-r-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--ink)]"
@@ -299,9 +301,15 @@ export function DrillScreen({
             >
               {MODE_LABEL[m] ?? m}
             </button>
+            </Tooltip>
           ))}
         </div>
         )}
+        {!daily ? (
+          <p className="text-[13px] text-[color:var(--graphite)]">
+            {GLOSSARY[mode]?.caption ?? ""}
+          </p>
+        ) : null}
         {!daily && mode === "LEAKS" && leaks.length === 0 ? (
           <p className="text-[13px] text-[color:var(--graphite)]">
             Play a round first — leaks appear after misses
@@ -345,9 +353,11 @@ export function DrillScreen({
       <div className="mt-10 flex flex-col items-center">
         <div className="flex items-center gap-3">
           <SeatRing active={question.prompt.position} size={104} />
-          <span className="text-[13px] text-[color:var(--graphite)]">
-            {question.prompt.context}
-          </span>
+          <Tooltip text={GLOSSARY['FOLDED_TO_YOU']!.tooltip}>
+            <span className="cursor-help text-[13px] text-[color:var(--graphite)] underline decoration-dotted decoration-[color:var(--bone)] underline-offset-4">
+              {question.prompt.context}
+            </span>
+          </Tooltip>
         </div>
 
         <div key={`${question.prompt.hand}-${seed}`} className="mt-6 flex items-center">
@@ -357,7 +367,13 @@ export function DrillScreen({
           </div>
         </div>
 
-        <p className="mt-4 text-[13px] text-[color:var(--graphite)]">{question.prompt.hand}</p>
+        <p className="mt-4 text-[13px] text-[color:var(--graphite)]">
+          <Tooltip text={describeHand(question.prompt.hand)}>
+            <span className="cursor-help underline decoration-dotted decoration-[color:var(--bone)] underline-offset-4">
+              {question.prompt.hand}
+            </span>
+          </Tooltip>
+        </p>
       </div>
 
       {!result ? (
@@ -430,10 +446,16 @@ export function DrillScreen({
 
       <div className="mt-auto flex flex-wrap justify-center gap-5 pt-10 text-[12px] text-[color:var(--graphite)]">
         <span className="inline-flex items-center gap-2">
-          <Keycap>F</Keycap> fold
+          <Keycap>F</Keycap>
+          <Tooltip text={GLOSSARY['FOLD']!.tooltip}>
+            <span className="cursor-help">fold</span>
+          </Tooltip>
         </span>
         <span className="inline-flex items-center gap-2">
-          <Keycap>R</Keycap> raise
+          <Keycap>R</Keycap>
+          <Tooltip text={GLOSSARY['RAISE']!.tooltip}>
+            <span className="cursor-help">raise</span>
+          </Tooltip>
         </span>
         <span className="inline-flex items-center gap-2">
           <Keycap>Space</Keycap> next
