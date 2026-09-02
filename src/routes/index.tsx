@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Home } from "@/components/Home";
 import { DrillScreen, type Mode } from "@/components/DrillScreen";
 import { ChartViewer } from "@/components/ChartViewer";
+import { GlossaryScreen } from "@/components/GlossaryScreen";
 import { drills } from "@/drills";
 import { freshStats, loadStats, type Stats } from "@/lib/storage";
 import type { Position } from "@/lib/charts";
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/")({
   component: App,
 });
 
-type Screen = "home" | "drill" | "chart";
+type Screen = "home" | "drill" | "chart" | "glossary";
 
 function App() {
   const [screen, setScreen] = useState<Screen>("home");
@@ -35,6 +36,7 @@ function App() {
   const [daily, setDaily] = useState(false);
   const [drillMode, setDrillMode] = useState<Mode>("ALL");
   const [chartFrom, setChartFrom] = useState<"home" | "drill">("home");
+  const [glossaryFrom, setGlossaryFrom] = useState<"home" | "drill">("home");
   const [chartPosition, setChartPosition] = useState<Position>("UTG");
   const drill = drills[0]!;
 
@@ -63,12 +65,20 @@ function App() {
       onStats={setStats}
       onHome={() => setScreen("home")}
       onChart={openChartFromDrill}
-      suspended={screen === "chart"}
+      onGlossary={() => {
+        setGlossaryFrom("drill");
+        setScreen("glossary");
+      }}
+      suspended={screen === "chart" || screen === "glossary"}
       daily={daily}
       onExitDaily={() => setDaily(false)}
       initialMode={drillMode}
     />
   );
+
+  if (screen === "glossary" && glossaryFrom === "home") {
+    return <GlossaryScreen onBack={() => setScreen("home")} />;
+  }
 
   if (screen === "home") {
     return (
@@ -90,6 +100,10 @@ function App() {
           setScreen("drill");
         }}
         onChart={openChartFromHome}
+        onGlossary={() => {
+          setGlossaryFrom("home");
+          setScreen("glossary");
+        }}
       />
     );
   }
@@ -98,10 +112,13 @@ function App() {
   // the current question survives a round trip to the chart viewer.
   return (
     <>
-      <div className={screen === "chart" ? "hidden" : undefined}>{drillScreen}</div>
+      <div className={screen === "chart" || screen === "glossary" ? "hidden" : undefined}>
+        {drillScreen}
+      </div>
       {screen === "chart" ? (
         <ChartViewer initialPosition={chartPosition} onBack={closeChart} />
       ) : null}
+      {screen === "glossary" ? <GlossaryScreen onBack={() => setScreen("drill")} /> : null}
     </>
   );
 }
