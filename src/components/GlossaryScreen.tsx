@@ -81,15 +81,15 @@ export function GlossaryScreen({ onBack }: { onBack: () => void }) {
   const rows = ROWS.filter((r) => filter === "All" || r.group === filter);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[720px] flex-col px-6 py-8">
+    <main className="mx-auto flex min-h-screen w-full max-w-[720px] flex-col px-4 py-6 sm:px-6 sm:py-8">
       <button
         onClick={onBack}
-        className="self-start text-[13px] text-[color:var(--graphite)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+        className="-ml-2 inline-flex h-11 items-center self-start px-2 text-[13px] text-[color:var(--graphite)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
       >
         ‹ Back
       </button>
 
-      <h1 className="mt-6 text-[32px] font-bold leading-none tracking-[-0.02em] text-[color:var(--ink)]">
+      <h1 className="mt-4 text-[28px] sm:text-[32px] font-bold leading-none tracking-[-0.02em] text-[color:var(--ink)]">
         Glossary
       </h1>
       <p className="mt-2 text-[14px] text-[color:var(--graphite)]">
@@ -102,7 +102,7 @@ export function GlossaryScreen({ onBack }: { onBack: () => void }) {
             key={g}
             onClick={() => setFilter(g)}
             aria-pressed={filter === g}
-            className="pill"
+            className="pill min-h-[44px] px-4"
             style={
               filter === g
                 ? { backgroundColor: "var(--ink)", color: "var(--paper)", borderColor: "var(--ink)" }
@@ -122,7 +122,7 @@ export function GlossaryScreen({ onBack }: { onBack: () => void }) {
               {rows
                 .filter((r) => r.group === g)
                 .map((r) => (
-                  <div key={r.term} className="grid gap-1 py-3 sm:grid-cols-[160px_minmax(0,1fr)]">
+                  <div key={r.term} className="grid gap-1 py-4 sm:grid-cols-[160px_minmax(0,1fr)] sm:py-3">
                     <dt className="inline-flex items-center gap-2 text-[15px] font-semibold text-[color:var(--ink)]">
                       {r.seat ? <SeatIcon kind={r.seat} size={18} /> : null}
                       {r.term}
