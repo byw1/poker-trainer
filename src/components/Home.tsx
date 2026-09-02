@@ -1,6 +1,6 @@
 import type { Stats } from "@/lib/storage";
 import { RangeGrid } from "./RangeGrid";
-import { Keycap, SeatRing } from "./Bits";
+import { Keycap, SeatRing, SeatIcon } from "./Bits";
 import { CHARTS, POSITIONS } from "@/lib/charts";
 import { rangePercent } from "@/lib/rangeParser";
 import { todayKey } from "@/lib/daily";
@@ -75,13 +75,13 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart }: Props) 
           <div className="mt-6 flex flex-wrap items-center gap-4 text-[13px] text-[color:var(--graphite)]">
             <span className="inline-flex items-center gap-2">
               <Keycap>F</Keycap>
-              <Tooltip text={GLOSSARY['FOLD']!.tooltip}>
+              <Tooltip title={GLOSSARY['FOLD']!.title} text={GLOSSARY['FOLD']!.tooltip}>
                 <span className="cursor-help">fold</span>
               </Tooltip>
             </span>
             <span className="inline-flex items-center gap-2">
               <Keycap>R</Keycap>
-              <Tooltip text={GLOSSARY['RAISE']!.tooltip}>
+              <Tooltip title={GLOSSARY['RAISE']!.title} text={GLOSSARY['RAISE']!.tooltip}>
                 <span className="cursor-help">raise</span>
               </Tooltip>
             </span>
@@ -122,8 +122,13 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart }: Props) 
                     return (
                       <div key={p} className="rounded-[3px] bg-[color:var(--paper)] px-2 py-2">
                         <dt className="text-[11px] text-[color:var(--graphite)]">
-                          <Tooltip text={GLOSSARY[p]?.tooltip ?? p}>
-                            <span className="cursor-help underline decoration-dotted decoration-[color:var(--bone)] underline-offset-4">
+                          <Tooltip
+                            title={GLOSSARY[p]?.title ?? p}
+                            text={GLOSSARY[p]?.tooltip ?? p}
+                            seat={p}
+                          >
+                            <span className="inline-flex cursor-help items-center gap-1 underline decoration-dotted decoration-[color:var(--bone)] underline-offset-4">
+                              <SeatIcon kind={p} size={14} />
                               {p}
                             </span>
                           </Tooltip>
@@ -151,7 +156,7 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart }: Props) 
                 return (
                   <div className="mt-6">
                     <p className="text-[13px] text-[color:var(--graphite)]">
-                      <Tooltip text={GLOSSARY['LEAKS']!.tooltip}>
+                      <Tooltip title={GLOSSARY['LEAKS']!.title} text={GLOSSARY['LEAKS']!.tooltip}>
                         <span className="cursor-help underline decoration-dotted decoration-[color:var(--bone)] underline-offset-4">
                           Leaks
                         </span>
