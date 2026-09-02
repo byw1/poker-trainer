@@ -19,11 +19,11 @@ export function ChartViewer({ initialPosition = "UTG", onBack }: Props) {
   const pct = rangePercent(range);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[860px] flex-col px-6 py-8">
-      <div className="flex items-center justify-between">
+    <main className="mx-auto flex min-h-screen w-full max-w-[860px] flex-col px-4 py-6 sm:px-6 sm:py-8">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <button
           onClick={onBack}
-          className="text-[13px] text-[color:var(--graphite)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+          className="-ml-2 inline-flex h-11 items-center px-2 text-[13px] text-[color:var(--graphite)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
         >
           Back
         </button>
@@ -32,14 +32,14 @@ export function ChartViewer({ initialPosition = "UTG", onBack }: Props) {
         </span>
       </div>
 
-      <h1 className="mt-6 text-[26px] font-bold tracking-[-0.02em] text-[color:var(--ink)]">
+      <h1 className="mt-6 text-[22px] sm:text-[26px] font-bold tracking-[-0.02em] text-[color:var(--ink)]">
         Opening ranges, 6-max cash
       </h1>
 
       <div
         role="group"
         aria-label="Position"
-        className="mt-5 inline-flex self-start overflow-hidden rounded-[3px] border border-[color:var(--bone)]"
+        className="no-scrollbar -mx-4 mt-5 flex max-w-full snap-x snap-mandatory items-stretch self-stretch overflow-x-auto px-4 sm:mx-0 sm:inline-flex sm:self-start sm:overflow-hidden sm:rounded-[3px] sm:border sm:border-[color:var(--bone)] sm:px-0"
       >
         {POSITIONS.map((p) => (
           <Tooltip
@@ -54,7 +54,7 @@ export function ChartViewer({ initialPosition = "UTG", onBack }: Props) {
           <button
             onClick={() => setPosition(p)}
             aria-pressed={p === position}
-            className="inline-flex items-center gap-1.5 border-r border-[color:var(--bone)] px-5 py-2 text-[14px] font-medium last:border-r-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--ink)]"
+            className="inline-flex h-11 shrink-0 snap-start items-center gap-1.5 whitespace-nowrap border border-[color:var(--bone)] px-4 text-[14px] font-medium sm:h-auto sm:border-0 sm:border-r sm:px-5 sm:py-2 sm:last:border-r-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--ink)]"
             style={
               p === position
                 ? { backgroundColor: "var(--ink)", color: "var(--paper)" }
@@ -72,7 +72,7 @@ export function ChartViewer({ initialPosition = "UTG", onBack }: Props) {
         {GLOSSARY[position]?.caption} Opens {pct.toFixed(1)}% first in.
       </p>
 
-      <div className="mt-6 flex flex-col items-center">
+      <div className="mt-6 flex w-full min-w-0 flex-col items-center">
         <RangeGrid range={range} maxWidth={760} onHoverCell={setHover} />
         <p className="mt-3 self-stretch text-[13px] text-[color:var(--graphite)]">
           {hover

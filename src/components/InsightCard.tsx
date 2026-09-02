@@ -35,7 +35,7 @@ function Stat({
   return (
     <div className="min-w-0 flex-1">
       <p className="text-[12px] text-[color:var(--graphite)]">{label}</p>
-      <p className="mt-1 flex items-baseline gap-2 text-[28px] font-bold leading-none tracking-[-0.02em] text-[color:var(--ink)]">
+      <p className="mt-1 flex items-baseline gap-2 text-[24px] font-bold leading-none sm:text-[28px] tracking-[-0.02em] text-[color:var(--ink)]">
         {children}
       </p>
       {pill ? <span className="mt-2 inline-flex">{pill}</span> : null}
@@ -63,7 +63,7 @@ export function InsightCard({
   const says = openFreq >= 50 ? "raise" : "fold";
 
   return (
-    <div className="insight-in mt-6 w-full max-w-[520px] rounded-[12px] border border-[color:var(--bone)] bg-[color:var(--paper)] p-5 text-left">
+    <div className="insight-in mt-6 w-full min-w-0 max-w-[520px] rounded-[12px] border border-[color:var(--bone)] bg-[color:var(--paper)] p-4 text-left sm:p-5">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-[17px] font-bold tracking-[-0.01em] text-[color:var(--ink)]">
           GTO says {says}
@@ -73,7 +73,7 @@ export function InsightCard({
         <ValuePill tone="neutral">{n} combos</ValuePill>
       </div>
 
-      <div className="mt-4 flex gap-5">
+      <div className="mt-4 grid grid-cols-2 gap-4 sm:flex sm:gap-5">
         <Stat label={`GTO open from ${position}`} meter={openFreq}>
           <Ticker value={openFreq} suffix="%" />
         </Stat>

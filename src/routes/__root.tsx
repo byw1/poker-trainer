@@ -76,7 +76,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      {
+        name: "viewport",
+        content: "width=device-width, initial-scale=1, viewport-fit=cover",
+      },
       { title: "Poker Trainer" },
       { name: "description", content: "Preflop open-raise drills for 6-max cash games." },
       { name: "author", content: "William Lee" },
