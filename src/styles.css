@@ -365,3 +365,127 @@
     display: none;
   }
 }
+
+@keyframes insight-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@utility insight-in {
+  animation: insight-in 160ms ease-out both;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@utility trace-in {
+  animation: insight-in 140ms ease-out both;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@utility meter-fill {
+  transition: width 400ms cubic-bezier(0.32, 0.72, 0.3, 1);
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+@utility chip {
+  align-items: center;
+  border: 1px solid var(--bone);
+  border-radius: 999px;
+  color: var(--graphite);
+  font-size: 11px;
+  line-height: 1;
+  padding: 4px 8px;
+}
+
+@utility pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--bone);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  transition:
+    background-color 140ms ease-out,
+    color 140ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+@layer base {
+  :root {
+    --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+    --dur-hover: 150ms;
+    --dur-layout: 220ms;
+  }
+}
+
+.trace-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--dur-layout) var(--ease-out-strong),
+    opacity var(--dur-hover) ease-out;
+}
+
+.trace-collapse[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.trace-caret {
+  display: inline-block;
+  transition: transform var(--dur-hover) var(--ease-out-strong);
+}
+
+.trace-caret[data-open="true"] {
+  transform: rotate(90deg);
+}
+
+.stream-tail {
+  filter: blur(1.5px);
+  opacity: 0.7;
+}
+
+.stream-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: var(--graphite);
+  opacity: 0;
+}
+
+.stream-caret.is-streaming {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trace-collapse,
+  .trace-caret {
+    transition: none;
+  }
+
+  .stream-tail {
+    filter: none;
+    opacity: 1;
+  }
+
+  .stream-caret {
+    display: none;
+  }
+}
