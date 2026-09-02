@@ -200,7 +200,8 @@ export function SeatRing({
   const heroIndex = SEAT_ORDER.indexOf(active);
 
   return (
-    <div className="relative max-w-full" style={{ width: w, height: h }}>
+    <div className="table-3d relative mx-auto max-w-full" style={{ width: w, height: h }}>
+      <div className="table-plane table-sway absolute inset-0">
       <svg
         width={w}
         height={h}
@@ -249,7 +250,7 @@ export function SeatRing({
         return (
           <div
             key={seat}
-            className="seat-slide absolute -translate-x-1/2 -translate-y-1/2"
+            className="seat-3d absolute"
             style={{ left: x, top: y }}
           >
             <Tooltip
@@ -273,6 +274,7 @@ export function SeatRing({
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
