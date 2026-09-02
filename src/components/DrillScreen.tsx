@@ -171,8 +171,8 @@ export function DrillScreen({
     (action: Action) => {
       if (result) return;
       setPressed(action);
-      if (action === "fold") sound.fold();
-      else sound.raise();
+      if (action === "raise") sound.raise();
+      else sound.fold();
       const r = drill.checkAnswer(question, action);
       setResult(r);
       window.setTimeout(() => (r.correct ? sound.correct() : sound.incorrect()), 180);
@@ -254,6 +254,7 @@ export function DrillScreen({
         return;
       }
       if (!result && (e.key === "f" || e.key === "F")) answer("fold");
+      else if (!result && (e.key === "c" || e.key === "C")) answer("call");
       else if (!result && (e.key === "r" || e.key === "R")) answer("raise");
       else if (result && (e.key === " " || e.key === "Enter")) {
         e.preventDefault();
@@ -435,7 +436,7 @@ export function DrillScreen({
         <div
           key={`${question.prompt.hand}-${seed}`}
           className={`cards-stage mt-6 flex items-center ${
-            pressed === "fold" ? "cards-folded" : pressed === "raise" ? "cards-raised" : ""
+            pressed === "raise" ? "cards-raised" : pressed ? "cards-folded" : ""
           }`}
         >
           <DealtCard rank={cards[0]!.rank} suit={cards[0]!.suit} tilt={-4} delay={0} />
@@ -462,6 +463,13 @@ export function DrillScreen({
             style={{ backgroundColor: "var(--bone)", color: "var(--ink)" }}
           >
             Fold <Keycap>F</Keycap>
+          </button>
+          <button
+            onClick={() => answer("call")}
+            className="inline-flex h-[56px] w-[200px] items-center justify-center gap-3 rounded-[3px] border border-[color:var(--bone)] transition-transform active:scale-[0.98] text-[17px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+            style={{ backgroundColor: "var(--paper)", color: "var(--ink)" }}
+          >
+            Call <Keycap>C</Keycap>
           </button>
           <button
             onClick={() => answer("raise")}
@@ -529,6 +537,12 @@ export function DrillScreen({
           <Keycap>F</Keycap>
           <Tooltip title={GLOSSARY['FOLD']!.title} text={GLOSSARY['FOLD']!.tooltip}>
             <span className="cursor-help">fold</span>
+          </Tooltip>
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <Keycap>C</Keycap>
+          <Tooltip title={GLOSSARY['CALL']!.title} text={GLOSSARY['CALL']!.tooltip}>
+            <span className="cursor-help">call</span>
           </Tooltip>
         </span>
         <span className="inline-flex items-center gap-2">
