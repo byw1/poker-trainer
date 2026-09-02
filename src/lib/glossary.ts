@@ -61,6 +61,12 @@ export const GLOSSARY: Record<string, Term> = {
     caption: "Fold — don't put money in.",
     tooltip: "Don't put money in. The hand is over for you.",
   },
+  CALL: {
+    title: "Call",
+    caption: "Call — limp. Put in the minimum to see a flop.",
+    tooltip:
+      "Call — limp. Put in the minimum to see a flop. GTO almost never does this when everyone has folded to you.",
+  },
   RAISE: {
     title: "Raise",
     caption: "Raise — open the pot.",

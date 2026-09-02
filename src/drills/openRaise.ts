@@ -23,7 +23,7 @@ export const openRaiseDrill: Drill = {
         position,
         context: "Folded to you",
       },
-      options: ["fold", "raise"],
+      options: ["fold", "call", "raise"],
     };
   },
 
@@ -32,10 +32,18 @@ export const openRaiseDrill: Drill = {
     const range = CHARTS[position];
     const freq = range[hand] ?? 0;
     const best: Action = freq >= 0.5 ? "raise" : "fold";
-    const correct = answer === best;
+    const correct = answer !== "call" && answer === best;
 
     const reason = REASONS[position][best === "raise" ? "in" : "out"];
-    const explanation = `${hand} ${best === "raise" ? "opens" : "folds"} from ${POSITION_LABEL[position].toLowerCase()}. ${reason}`;
+    const why = `${hand} ${best === "raise" ? "opens" : "folds"} from ${POSITION_LABEL[position].toLowerCase()}. ${reason}`;
+    const limpNote =
+      position === "SB"
+        ? " Some solvers mix a limp from the small blind; this trainer uses raise-or-fold so the drill stays one decision."
+        : "";
+    const explanation =
+      answer === "call"
+        ? `GTO almost never limps when folded to you from ${POSITION_LABEL[position].toLowerCase()}. Call here is a limp — raise or fold instead. ${why}${limpNote}`
+        : why;
 
     return {
       correct,
