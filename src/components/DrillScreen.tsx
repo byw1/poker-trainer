@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RangeGrid } from "./RangeGrid";
-import { Keycap, SeatRing } from "./Bits";
+import { Keycap, SeatRing, SeatIcon } from "./Bits";
 import { PlayingCard, type PlayingCardRank, type PlayingCardSuit } from "./PlayingCard";
 import { POSITIONS, type Position } from "@/lib/charts";
 import type { Drill, Action, GenerateOptions, Question, Result } from "@/drills/types";
@@ -8,6 +8,7 @@ import { recordAnswer, recordDaily, type Stats } from "@/lib/storage";
 import { DAILY_COUNT, dailyQuestions, todayKey } from "@/lib/daily";
 import { GLOSSARY, describeHand } from "@/lib/glossary";
 import { Tooltip } from "./Tooltip";
+import { initSound, setSoundEnabled, sound } from "@/lib/sound";
 
 const SUITS: PlayingCardSuit[] = ["spades", "hearts", "diamonds", "clubs"];
 
@@ -134,6 +135,20 @@ export function DrillScreen({
       drill.generateQuestion(Math.random, optionsFor(initialMode)),
   );
   const [result, setResult] = useState<Result | null>(null);
+  const [pressed, setPressed] = useState<Action | null>(null);
+  const [soundOn, setSoundOn] = useState(true);
+
+  useEffect(() => {
+    setSoundOn(initSound());
+  }, []);
+
+  const toggleSound = useCallback(() => {
+    setSoundOn((on) => {
+      setSoundEnabled(!on);
+      if (!on) sound.flip();
+      return !on;
+    });
+  }, []);
 
   useEffect(() => {
     if (result && verdictRef.current) {
@@ -142,14 +157,25 @@ export function DrillScreen({
   }, [result]);
 
   const seed = useMemo(() => Math.random(), [question]);
+
+  // Deal ticks + the paper flip, matching the card animation timings.
+  useEffect(() => {
+    sound.deal();
+    const t = window.setTimeout(() => sound.flip(), 240);
+    return () => window.clearTimeout(t);
+  }, [question]);
   const cards = handCards(question.prompt.hand, seed);
 
 
   const answer = useCallback(
     (action: Action) => {
       if (result) return;
+      setPressed(action);
+      if (action === "fold") sound.fold();
+      else sound.raise();
       const r = drill.checkAnswer(question, action);
       setResult(r);
+      window.setTimeout(() => (r.correct ? sound.correct() : sound.incorrect()), 180);
       let updated = recordAnswer(stats, question.prompt.position, question.prompt.hand, r.correct);
       if (daily) {
         const score = dailyScore + (r.correct ? 1 : 0);
@@ -170,11 +196,13 @@ export function DrillScreen({
           return;
         }
         setResult(null);
+        setPressed(null);
         setDailyIndex(i);
         setQuestion(dailySet[i] ?? drill.generateQuestion(Math.random));
         return;
       }
       setResult(null);
+      setPressed(null);
       setQuestion(drill.generateQuestion(Math.random, optionsFor(m)));
     },
     [drill, mode, optionsFor, daily, dailyIndex, dailySet],
@@ -185,6 +213,7 @@ export function DrillScreen({
     setDailyIndex(0);
     setDailyScore(0);
     setResult(null);
+    setPressed(null);
     setQuestion(dailySet[0] ?? drill.generateQuestion(Math.random));
   }, [drill, dailySet]);
 
@@ -210,7 +239,6 @@ export function DrillScreen({
         return;
       }
       if (dailyDone) {
-        // The round is over; don't let Space re-trigger the focused button.
         if (e.key === " ") e.preventDefault();
         return;
       }
@@ -248,6 +276,40 @@ export function DrillScreen({
           className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
         >
           Poker Trainer
+        </button>
+        <button
+          onClick={toggleSound}
+          aria-pressed={soundOn}
+          aria-label={soundOn ? "Mute sound" : "Unmute sound"}
+          className="ml-3 mr-auto inline-flex h-7 w-7 items-center justify-center rounded-[4px] border border-[color:var(--bone)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+          style={{ color: soundOn ? "var(--ink)" : "var(--graphite)" }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
+            <path
+              d="M4 9.5h3.5L12 5.5v13L7.5 14.5H4z"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinejoin="round"
+            />
+            {soundOn ? (
+              <path
+                d="M15.5 9.5a4 4 0 0 1 0 5M18 7a7.5 7.5 0 0 1 0 10"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
+            ) : (
+              <path
+                d="M16 9.5l5 5M21 9.5l-5 5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
+            )}
+          </svg>
         </button>
         {stats.totalAnswered > 0 ? (
           <div className="flex items-baseline gap-6">
@@ -288,17 +350,26 @@ export function DrillScreen({
           className="inline-flex overflow-hidden rounded-[3px] border border-[color:var(--bone)]"
         >
           {MODES.map((m) => (
-            <Tooltip key={m} text={GLOSSARY[m]?.tooltip ?? m} focusable={false}>
+            <Tooltip
+              key={m}
+              title={GLOSSARY[m]?.title ?? m}
+              text={GLOSSARY[m]?.tooltip ?? m}
+              seat={m === "ALL" || m === "LEAKS" ? undefined : m}
+              focusable={false}
+              toggleOnClick={false}
+              infoMark
+            >
             <button
               onClick={() => pickMode(m)}
               aria-pressed={m === mode}
-              className="border-r border-[color:var(--bone)] px-3 py-1.5 text-[13px] font-medium last:border-r-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--ink)]"
+              className="inline-flex items-center gap-1.5 border-r border-[color:var(--bone)] px-3 py-1.5 text-[13px] font-medium last:border-r-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--ink)]"
               style={
                 m === mode
                   ? { backgroundColor: "var(--ink)", color: "var(--paper)" }
                   : { color: "var(--ink)" }
               }
             >
+              <SeatIcon kind={m} size={16} />
               {MODE_LABEL[m] ?? m}
             </button>
             </Tooltip>
@@ -353,7 +424,7 @@ export function DrillScreen({
       <div className="mt-10 flex flex-col items-center">
         <div className="flex flex-col items-center gap-2">
           <SeatRing active={question.prompt.position} width={300} />
-          <Tooltip text={GLOSSARY['FOLDED_TO_YOU']!.tooltip}>
+          <Tooltip title={GLOSSARY['FOLDED_TO_YOU']!.title} text={GLOSSARY['FOLDED_TO_YOU']!.tooltip}>
             <span className="cursor-help text-[13px] text-[color:var(--graphite)] underline decoration-dotted decoration-[color:var(--bone)] underline-offset-4">
               {question.prompt.context}
             </span>
@@ -361,7 +432,12 @@ export function DrillScreen({
         </div>
 
 
-        <div key={`${question.prompt.hand}-${seed}`} className="mt-6 flex items-center">
+        <div
+          key={`${question.prompt.hand}-${seed}`}
+          className={`cards-stage mt-6 flex items-center ${
+            pressed === "fold" ? "cards-folded" : pressed === "raise" ? "cards-raised" : ""
+          }`}
+        >
           <DealtCard rank={cards[0]!.rank} suit={cards[0]!.suit} tilt={-4} delay={0} />
           <div className="-ml-6">
             <DealtCard rank={cards[1]!.rank} suit={cards[1]!.suit} tilt={5} delay={70} />
@@ -369,7 +445,7 @@ export function DrillScreen({
         </div>
 
         <p className="mt-4 text-[13px] text-[color:var(--graphite)]">
-          <Tooltip text={describeHand(question.prompt.hand)}>
+          <Tooltip title={question.prompt.hand} text={describeHand(question.prompt.hand)}>
             <span className="cursor-help underline decoration-dotted decoration-[color:var(--bone)] underline-offset-4">
               {question.prompt.hand}
             </span>
@@ -397,7 +473,10 @@ export function DrillScreen({
         </div>
       ) : (
         <div className="mt-8 flex flex-col items-center">
-          <div ref={verdictRef} className="flex items-center gap-3">
+          <div
+            ref={verdictRef}
+            className={`flex items-center gap-3 ${result.correct ? "" : "verdict-shake"}`}
+          >
             <span
               aria-hidden
               className="verdict-pop flex h-8 w-8 items-center justify-center rounded-full text-[17px]"
@@ -448,13 +527,13 @@ export function DrillScreen({
       <div className="mt-auto flex flex-wrap justify-center gap-5 pt-10 text-[12px] text-[color:var(--graphite)]">
         <span className="inline-flex items-center gap-2">
           <Keycap>F</Keycap>
-          <Tooltip text={GLOSSARY['FOLD']!.tooltip}>
+          <Tooltip title={GLOSSARY['FOLD']!.title} text={GLOSSARY['FOLD']!.tooltip}>
             <span className="cursor-help">fold</span>
           </Tooltip>
         </span>
         <span className="inline-flex items-center gap-2">
           <Keycap>R</Keycap>
-          <Tooltip text={GLOSSARY['RAISE']!.tooltip}>
+          <Tooltip title={GLOSSARY['RAISE']!.title} text={GLOSSARY['RAISE']!.tooltip}>
             <span className="cursor-help">raise</span>
           </Tooltip>
         </span>
