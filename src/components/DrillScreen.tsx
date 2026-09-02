@@ -49,7 +49,7 @@ function DealtCard({
 }) {
   return (
     <div
-      className="card-deal"
+      className="card-deal-3d"
       style={
         {
           perspective: "900px",
@@ -79,7 +79,6 @@ export type Mode = "ALL" | Position | "LEAKS";
 const MODES: Mode[] = ["ALL", ...POSITIONS, "LEAKS"];
 const MODE_LABEL: Record<string, string> = { ALL: "All", LEAKS: "Leaks" };
 
-/** Hand classes the user has missed, worst accuracy first, then most misses. */
 function leakHands(stats: Stats): string[] {
   return Object.entries(stats.byHand)
     .filter(([, v]) => v.answered >= 1 && v.correct < v.answered)
@@ -98,13 +97,10 @@ interface Props {
   onStats: (s: Stats) => void;
   onHome: () => void;
   onChart: (position: Position) => void;
-  /** Opens the glossary screen (G). */
   onGlossary: () => void;
   suspended?: boolean;
-  /** Daily challenge: 10 fixed, date-seeded hands. */
   daily?: boolean;
   onExitDaily?: () => void;
-  /** Practice mode to start in (e.g. "LEAKS" from a Home leak row). */
   initialMode?: Mode;
 }
 
@@ -171,14 +167,12 @@ export function DrillScreen({
 
   const seed = useMemo(() => Math.random(), [question]);
 
-  // Deal ticks + the paper flip, matching the card animation timings.
   useEffect(() => {
     sound.deal();
     const t = window.setTimeout(() => sound.flip(), 240);
     return () => window.clearTimeout(t);
   }, [question]);
   const cards = handCards(question.prompt.hand, seed);
-
 
   const answer = useCallback(
     (action: Action) => {
@@ -232,7 +226,6 @@ export function DrillScreen({
     [drill, mode, optionsFor, daily, dailyIndex, dailySet],
   );
 
-  // Replay today's same 10 hands; Back home is what leaves daily mode.
   const playAgain = useCallback(() => {
     setDailyIndex(0);
     setDailyScore(0);
@@ -269,7 +262,6 @@ export function DrillScreen({
         return;
       }
       if (dailyDone) {
-        // The round is over; don't let Space re-trigger the focused button.
         if (e.key === " ") e.preventDefault();
         return;
       }
@@ -456,7 +448,6 @@ export function DrillScreen({
             <Button variant="secondary" size="lg" className="h-12 w-full sm:h-[56px] sm:w-[200px]" onClick={goHome}>
               Back home
             </Button>
-
           </div>
         </div>
       ) : (
@@ -471,19 +462,18 @@ export function DrillScreen({
           </Tooltip>
         </div>
 
-
         <div
           key={`${question.prompt.hand}-${seed}`}
-          className={`cards-stage mt-6 flex items-center ${
-            pressed === "raise" ? "cards-raised" : pressed ? "cards-folded" : ""
-          }`}
+          className={`cards-3d mt-6 flex items-center justify-center ${
+            pressed === "raise" ? "cards-raised-3d" : pressed ? "cards-folded-3d" : ""
+          } cards-stage`}
         >
           <DealtCard
             rank={cards[0]!.rank}
             suit={cards[0]!.suit}
             tilt={-4}
             delay={0}
-            width={isPhone ? 96 : 128}
+            width={isPhone ? 110 : 128}
           />
           <div className={isPhone ? "-ml-4" : "-ml-6"}>
             <DealtCard
@@ -491,7 +481,7 @@ export function DrillScreen({
               suit={cards[1]!.suit}
               tilt={5}
               delay={70}
-              width={isPhone ? 96 : 128}
+              width={isPhone ? 110 : 128}
             />
           </div>
         </div>
@@ -524,7 +514,7 @@ export function DrillScreen({
           </Tooltip>
         </div>
       ) : (
-        <div className="mt-8 flex w-full min-w-0 flex-col items-center">
+        <div className="result-fade-up mt-8 flex w-full min-w-0 flex-col items-center">
           <div
             ref={verdictRef}
             className={`flex items-center gap-3 ${result.correct ? "" : "verdict-shake"}`}
@@ -546,7 +536,6 @@ export function DrillScreen({
           <p className="mt-2 max-w-[46ch] text-center text-[14px] text-[color:var(--graphite)]">
             <StreamText text={result.explanation} charsPerTick={2} tickMs={9} />
           </p>
-
 
           <InsightCard
             hand={question.prompt.hand}
@@ -577,7 +566,6 @@ export function DrillScreen({
             </button>
           ) : null}
 
-
           {result.visual ? (
             <div className="mt-7 flex w-full min-w-0 justify-center">
               <RangeGrid range={result.visual.range} highlight={result.visual.highlight} reveal />
@@ -587,10 +575,8 @@ export function DrillScreen({
           <Button autoFocus variant="primary" className="mt-8 min-h-[48px] w-full sm:w-auto" onClick={() => next()}>
             Next hand <span className="fine-only"><Keycap>Space</Keycap></span>
           </Button>
-
         </div>
       )}
-
       </>
       )}
 
