@@ -186,7 +186,7 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
                     const accA = a[1].correct / a[1].answered;
                     const accB = b[1].correct / b[1].answered;
                     if (accA !== accB) return accA - accB;
-                    return b[1].answered - a[1].correct - (a[1].answered - a[1].correct);
+                    return b[1].answered - b[1].correct - (a[1].answered - a[1].correct);
                   })
                   .slice(0, 5);
                 if (leaks.length === 0) return null;
