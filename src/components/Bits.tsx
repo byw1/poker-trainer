@@ -1,4 +1,5 @@
 import { GLOSSARY } from "@/lib/glossary";
+import { useViewportWidth } from "@/lib/useViewport";
 import { Tooltip } from "./Tooltip";
 
 /** A small physical-looking keycap. */
@@ -187,19 +188,23 @@ export function SeatRing({
   width?: number;
   showFolds?: boolean;
 }) {
-  const h = Math.round(width * 0.64);
-  const cx = width / 2;
+  // Never wider than the phone viewport minus page gutters.
+  const vw = useViewportWidth();
+  const w = Math.max(200, Math.min(width, vw - 40));
+  const compact = w < 270;
+  const h = Math.round(w * (compact ? 0.72 : 0.64));
+  const cx = w / 2;
   const cy = h / 2;
-  const rx = width / 2 - 34;
-  const ry = h / 2 - 24;
+  const rx = w / 2 - (compact ? 26 : 34);
+  const ry = h / 2 - (compact ? 20 : 24);
   const heroIndex = SEAT_ORDER.indexOf(active);
 
   return (
-    <div className="relative" style={{ width, height: h }}>
+    <div className="relative max-w-full" style={{ width: w, height: h }}>
       <svg
-        width={width}
+        width={w}
         height={h}
-        viewBox={`0 0 ${width} ${h}`}
+        viewBox={`0 0 ${w} ${h}`}
         role="img"
         aria-label={`6-max table, you are in the ${active} seat`}
       >
@@ -253,14 +258,16 @@ export function SeatRing({
               seat={seat}
             >
               <span
-                className="seat-chip flex min-w-[52px] cursor-help flex-col items-center gap-0.5 rounded-[4px] border px-2 py-1 text-center leading-tight"
+                className={`seat-chip flex cursor-help flex-col items-center gap-0.5 rounded-[4px] border text-center leading-tight ${compact ? "min-w-[40px] px-1 py-1" : "min-w-[52px] px-2 py-1"}`}
                 style={style}
               >
-                <SeatIcon kind={seat} size={20} folded={folded} />
+                <SeatIcon kind={seat} size={compact ? 16 : 20} folded={folded} />
                 {isHero ? (
                   <span className="text-[10px] font-medium text-[color:var(--spruce)]">You</span>
                 ) : null}
-                <span className="text-[12px] font-semibold tracking-[-0.01em]">{seat}</span>
+                <span className={`font-semibold tracking-[-0.01em] ${compact ? "text-[11px]" : "text-[12px]"}`}>
+                  {seat}
+                </span>
               </span>
             </Tooltip>
           </div>

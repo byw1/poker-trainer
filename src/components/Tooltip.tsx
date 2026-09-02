@@ -70,9 +70,11 @@ export function Tooltip({
       const cardH = cardRef.current?.offsetHeight ?? 120;
       const below = r.bottom + 10;
       const flipped = below + cardH > window.innerHeight - 12;
-      const left = Math.min(
-        Math.max(r.left + r.width / 2, CARD_W / 2 + 10),
-        window.innerWidth - CARD_W / 2 - 10,
+      const cardW = cardRef.current?.offsetWidth ?? Math.min(CARD_W, window.innerWidth - 24);
+      // Left edge, clamped inside the viewport (no transform, so no overflow).
+      const left = Math.max(
+        12,
+        Math.min(r.left + r.width / 2 - cardW / 2, window.innerWidth - cardW - 12),
       );
       setPos({ left, top: flipped ? r.top - 10 - cardH : below, flipped });
     };
@@ -142,9 +144,10 @@ export function Tooltip({
           role="tooltip"
           onMouseEnter={clear}
           onMouseLeave={() => schedule(false)}
-          className="hover-card fixed z-50 flex -translate-x-1/2 flex-col gap-1.5 rounded-[8px] border px-3.5 py-3 text-left font-normal normal-case"
+          className="hover-card fixed z-50 flex flex-col gap-1.5 rounded-[8px] border px-3.5 py-3 text-left font-normal normal-case"
           style={{
-            width: CARD_W,
+            width: `min(${CARD_W}px, calc(100vw - 24px))`,
+            maxWidth: "calc(100vw - 24px)",
             left: pos.left,
             top: pos.top,
             backgroundColor: "var(--paper)",
