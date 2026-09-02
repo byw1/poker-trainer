@@ -9,6 +9,11 @@ import { DAILY_COUNT, dailyQuestions, todayKey } from "@/lib/daily";
 import { GLOSSARY, describeHand } from "@/lib/glossary";
 import { Tooltip } from "./Tooltip";
 import { initSound, setSoundEnabled, sound } from "@/lib/sound";
+import { InsightCard } from "./InsightCard";
+import { Button } from "./ui/Button";
+import { StreamText } from "./ui/StreamText";
+
+import { BADGES, type BadgeId } from "@/lib/progress";
 
 const SUITS: PlayingCardSuit[] = ["spades", "hearts", "diamonds", "clubs"];
 
@@ -90,6 +95,8 @@ interface Props {
   onStats: (s: Stats) => void;
   onHome: () => void;
   onChart: (position: Position) => void;
+  /** Opens the glossary screen (G). */
+  onGlossary: () => void;
   suspended?: boolean;
   /** Daily challenge: 10 fixed, date-seeded hands. */
   daily?: boolean;
@@ -104,6 +111,7 @@ export function DrillScreen({
   onStats,
   onHome,
   onChart,
+  onGlossary,
   suspended = false,
   daily = false,
   onExitDaily,
@@ -137,6 +145,7 @@ export function DrillScreen({
   const [result, setResult] = useState<Result | null>(null);
   const [pressed, setPressed] = useState<Action | null>(null);
   const [soundOn, setSoundOn] = useState(true);
+  const [newBadges, setNewBadges] = useState<BadgeId[]>([]);
 
   useEffect(() => {
     setSoundOn(initSound());
@@ -176,11 +185,22 @@ export function DrillScreen({
       const r = drill.checkAnswer(question, action);
       setResult(r);
       window.setTimeout(() => (r.correct ? sound.correct() : sound.incorrect()), 180);
-      let updated = recordAnswer(stats, question.prompt.position, question.prompt.hand, r.correct);
+      let updated = recordAnswer(
+        stats,
+        question.prompt.position,
+        question.prompt.hand,
+        r.correct,
+        action,
+      );
       if (daily) {
         const score = dailyScore + (r.correct ? 1 : 0);
         setDailyScore(score);
         if (dailyIndex + 1 >= DAILY_COUNT) updated = recordDaily(updated, dateKey, score);
+      }
+      const fresh = updated.badges.filter((b) => !stats.badges.includes(b));
+      if (fresh.length > 0) {
+        setNewBadges(fresh);
+        window.setTimeout(() => setNewBadges([]), 2000);
       }
       onStats(updated);
     },
@@ -233,12 +253,19 @@ export function DrillScreen({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (suspended) return;
+      if (e.key === "g" || e.key === "G") {
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        e.preventDefault();
+        onGlossary();
+        return;
+      }
       if (e.key === "?") {
         e.preventDefault();
         onChart(question.prompt.position);
         return;
       }
       if (dailyDone) {
+        // The round is over; don't let Space re-trigger the focused button.
         if (e.key === " ") e.preventDefault();
         return;
       }
@@ -263,7 +290,7 @@ export function DrillScreen({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [answer, next, pickMode, result, onChart, suspended, question, daily, dailyDone]);
+  }, [answer, next, pickMode, result, onChart, onGlossary, suspended, question, daily, dailyDone]);
 
   const accuracy =
     stats.totalAnswered > 0 ? Math.round((stats.totalCorrect / stats.totalAnswered) * 100) : 0;
@@ -405,19 +432,13 @@ export function DrillScreen({
                   : "Rough round — open the charts and work one position at a time."}
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <button
-              onClick={playAgain}
-              className="h-[56px] w-[200px] rounded-[3px] text-[17px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
-              style={{ backgroundColor: "var(--spruce)", color: "var(--paper)" }}
-            >
+            <Button variant="primary" size="lg" onClick={playAgain}>
               Play again
-            </button>
-            <button
-              onClick={goHome}
-              className="h-[56px] w-[200px] rounded-[3px] border border-[color:var(--bone)] text-[17px] font-medium text-[color:var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
-            >
+            </Button>
+            <Button variant="secondary" size="lg" onClick={goHome}>
               Back home
-            </button>
+            </Button>
+
           </div>
         </div>
       ) : (
@@ -456,28 +477,21 @@ export function DrillScreen({
 
       {!result ? (
         <div className="mt-10 flex flex-wrap justify-center gap-4">
-          <button
-            autoFocus
-            onClick={() => answer("fold")}
-            className="inline-flex h-[56px] w-[200px] items-center justify-center gap-3 rounded-[3px] transition-transform active:scale-[0.98] text-[17px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
-            style={{ backgroundColor: "var(--bone)", color: "var(--ink)" }}
-          >
+          <Tooltip title={GLOSSARY['FOLD']!.title} text={GLOSSARY['FOLD']!.tooltip} focusable={false} toggleOnClick={false}>
+          <Button autoFocus variant="fold" size="lg" onClick={() => answer("fold")}>
             Fold <Keycap>F</Keycap>
-          </button>
-          <button
-            onClick={() => answer("call")}
-            className="inline-flex h-[56px] w-[200px] items-center justify-center gap-3 rounded-[3px] border border-[color:var(--bone)] transition-transform active:scale-[0.98] text-[17px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
-            style={{ backgroundColor: "var(--paper)", color: "var(--ink)" }}
-          >
+          </Button>
+          </Tooltip>
+          <Tooltip title={GLOSSARY['CALL']!.title} text={GLOSSARY['CALL']!.tooltip} focusable={false} toggleOnClick={false}>
+          <Button variant="secondary" size="lg" onClick={() => answer("call")}>
             Call <Keycap>C</Keycap>
-          </button>
-          <button
-            onClick={() => answer("raise")}
-            className="inline-flex h-[56px] w-[200px] items-center justify-center gap-3 rounded-[3px] transition-transform active:scale-[0.98] text-[17px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
-            style={{ backgroundColor: "var(--crimson)", color: "var(--paper)" }}
-          >
+          </Button>
+          </Tooltip>
+          <Tooltip title={GLOSSARY['RAISE']!.title} text={GLOSSARY['RAISE']!.tooltip} focusable={false} toggleOnClick={false}>
+          <Button variant="raise" size="lg" onClick={() => answer("raise")}>
             Raise <Keycap>R</Keycap>
-          </button>
+          </Button>
+          </Tooltip>
         </div>
       ) : (
         <div className="mt-8 flex flex-col items-center">
@@ -500,8 +514,29 @@ export function DrillScreen({
             </p>
           </div>
           <p className="mt-2 max-w-[46ch] text-center text-[14px] text-[color:var(--graphite)]">
-            {result.explanation}
+            <StreamText text={result.explanation} charsPerTick={2} tickMs={9} />
           </p>
+
+
+          <InsightCard
+            hand={question.prompt.hand}
+            position={question.prompt.position}
+            chosen={result.chosen}
+          />
+
+          {newBadges.length > 0 ? (
+            <div className="insight-in mt-3 flex flex-wrap justify-center gap-2">
+              {newBadges.map((b) => (
+                <span
+                  key={b}
+                  className="chip"
+                  style={{ borderColor: "var(--spruce)", color: "var(--spruce)" }}
+                >
+                  Unlocked — {BADGES[b]?.label ?? b}
+                </span>
+              ))}
+            </div>
+          ) : null}
 
           {!result.correct && !daily ? (
             <button
@@ -519,13 +554,10 @@ export function DrillScreen({
             </div>
           ) : null}
 
-          <button
-            autoFocus
-            onClick={() => next()}
-            className="mt-8 inline-flex items-center gap-3 rounded-[3px] bg-[color:var(--spruce)] px-6 py-3 text-[15px] font-medium text-[color:var(--paper)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
-          >
+          <Button autoFocus variant="primary" className="mt-8" onClick={() => next()}>
             Next hand <Keycap>Space</Keycap>
-          </button>
+          </Button>
+
         </div>
       )}
 
@@ -556,6 +588,9 @@ export function DrillScreen({
         </span>
         <span className="inline-flex items-center gap-2">
           <Keycap>?</Keycap> charts
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <Keycap>G</Keycap> glossary
         </span>
       </div>
     </main>
