@@ -6,6 +6,10 @@ import { rangePercent } from "@/lib/rangeParser";
 import { todayKey } from "@/lib/daily";
 import { GLOSSARY } from "@/lib/glossary";
 import { Tooltip } from "./Tooltip";
+import { BADGES, rankFor } from "@/lib/progress";
+import { Ticker } from "./Ticker";
+import { Button } from "./ui/Button";
+
 
 interface Props {
   stats: Stats;
@@ -13,14 +17,16 @@ interface Props {
   onDaily: () => void;
   onStartLeaks: () => void;
   onChart: () => void;
+  onGlossary: () => void;
 }
 
-export function Home({ stats, onStart, onDaily, onStartLeaks, onChart }: Props) {
+export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossary }: Props) {
   const today = todayKey();
   const todayBest = stats.dailyBest?.[today];
   const played = stats.totalAnswered > 0;
   const accuracy = played ? Math.round((stats.totalCorrect / stats.totalAnswered) * 100) : 0;
   const btn = CHARTS.BTN;
+  const { rank, next, progress } = rankFor(stats.xp);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[1120px] flex-col justify-center px-6 py-16">
@@ -43,25 +49,20 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart }: Props) 
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <button
-              onClick={onStart}
-              className="rounded-[3px] bg-[color:var(--spruce)] px-7 py-3.5 text-[16px] font-medium text-[color:var(--paper)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
-            >
+            <Button variant="primary" size="xl" onClick={onStart}>
               Start drill
-            </button>
-            <button
-              onClick={onDaily}
-              className="rounded-[3px] border border-[color:var(--ink)] px-7 py-3.5 text-[16px] font-medium text-[color:var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
-            >
+            </Button>
+            <Button variant="outline" size="xl" onClick={onDaily}>
               Today&rsquo;s 10
-            </button>
-            <button
-              onClick={onChart}
-              className="rounded-[3px] border border-[color:var(--bone)] px-7 py-3.5 text-[16px] font-medium text-[color:var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
-            >
+            </Button>
+            <Button variant="secondary" size="xl" onClick={onChart}>
               View charts
-            </button>
+            </Button>
+            <Button variant="secondary" size="xl" onClick={onGlossary}>
+              Glossary
+            </Button>
           </div>
+
 
           {typeof todayBest === "number" ? (
             <p className="mt-4 text-[13px] text-[color:var(--graphite)]">
@@ -95,6 +96,36 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart }: Props) 
               <Keycap>?</Keycap> charts
             </span>
           </div>
+
+          {played ? (
+            <div className="mt-6 flex flex-wrap items-center gap-2">
+              <span
+                className="pill"
+                style={{ borderColor: "var(--spruce)", color: "var(--spruce)" }}
+                title={next ? `${next.min - stats.xp} XP to ${next.name}` : "Top rank"}
+              >
+                {rank.name} · <Ticker value={stats.xp} /> XP
+                <span
+                  aria-hidden
+                  className="ml-1 inline-block h-1.5 w-10 rounded-[1px]"
+                  style={{ backgroundColor: "var(--bone)" }}
+                >
+                  <span
+                    className="meter-fill block h-full rounded-[1px]"
+                    style={{
+                      width: `${Math.round(progress * 100)}%`,
+                      backgroundColor: "var(--spruce)",
+                    }}
+                  />
+                </span>
+              </span>
+              {stats.badges.map((b) => (
+                <span key={b} className="chip" title={BADGES[b]?.hint}>
+                  {BADGES[b]?.label ?? b}
+                </span>
+              ))}
+            </div>
+          ) : null}
 
           {played ? (
             <div className="mt-10 border-t border-[color:var(--bone)] pt-6">
@@ -155,7 +186,7 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart }: Props) 
                     const accA = a[1].correct / a[1].answered;
                     const accB = b[1].correct / b[1].answered;
                     if (accA !== accB) return accA - accB;
-                    return b[1].answered - b[1].correct - (a[1].answered - a[1].correct);
+                    return b[1].answered - a[1].correct - (a[1].answered - a[1].correct);
                   })
                   .slice(0, 5);
                 if (leaks.length === 0) return null;
