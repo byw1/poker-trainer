@@ -15,6 +15,7 @@ import { useDisplay } from "@/lib/display";
 import { DisplaySheet } from "./DisplaySheet";
 
 
+
 interface Props {
   stats: Stats;
   onStart: () => void;
@@ -34,11 +35,12 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
   const { display, set: setDisplay } = useDisplay();
   const [sheetOpen, setSheetOpen] = useState(false);
 
+
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[1120px] flex-col justify-center px-4 py-10 sm:px-6 sm:py-16">
-      <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-14">
+    <main className="mx-auto flex min-h-screen w-full max-w-[1120px] flex-col justify-center px-4 py-8 sm:px-6 sm:py-16">
+      <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-14">
         <div className="mx-auto flex w-full max-w-[440px] min-w-0 flex-col items-center text-center lg:mx-0 lg:block lg:max-w-none lg:text-left">
-          <div className="order-1 mb-3 lg:mb-4">
+          <div className="order-1 mb-2 lg:mb-4">
             <span className="lg:hidden">
               <Logo size={56} wordmark={false} />
             </span>
@@ -51,54 +53,55 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
             Poker Trainer
           </h1>
 
-          <p className="order-2 mt-1 text-[15px] font-medium text-[color:var(--spruce)]">
+          <p className="order-1 mt-1 text-[15px] font-medium text-[color:var(--spruce)]">
             Open. Or don&rsquo;t.
           </p>
 
-          <div className="order-4 mt-6 flex flex-col items-center lg:order-none lg:mt-4 lg:items-start">
+          <div className="order-2 mt-3 flex flex-col items-center lg:order-none lg:mt-4 lg:items-start">
             {display.table ? (
               <>
-                <SeatRing active="BTN" width={300} showFolds={false} hoverHelp={display.hoverHelp} />
-                <p className="mt-2 text-[13px] text-[color:var(--graphite)]">
+                <SeatRing active="BTN" width={260} showFolds={false} hoverHelp={display.hoverHelp} />
+                <p className="mt-1 text-[12px] text-[color:var(--graphite)]">
                   You are on the button. Seats go clockwise.
                 </p>
               </>
             ) : null}
           </div>
 
-          <p className="order-2 mt-4 max-w-[40ch] text-[15px] text-[color:var(--graphite)] sm:text-[16px]">
-            Preflop open-raise drills for 6-max cash. Get a hand, fold or raise, see the range.
-          </p>
-
-          <div className="order-3 mt-6 flex w-full flex-col items-center gap-3 sm:mt-8 lg:items-start">
+          <div className="order-3 mt-4 flex w-full flex-col items-center gap-2 lg:items-start">
             <Button
               variant="primary"
               size="xl"
-              className="mx-auto min-h-[48px] w-full max-w-[320px] lg:mx-0 lg:w-auto"
+              className="hero-lift mx-auto min-h-[52px] w-full max-w-[320px] text-[17px] lg:mx-0 lg:w-auto"
               onClick={onStart}
             >
               Start drill
             </Button>
             <div className="mx-auto grid w-full max-w-[320px] grid-cols-2 gap-2 lg:mx-0 lg:flex lg:max-w-none lg:gap-3">
-              <Button variant="outline" className="min-h-[44px] w-full rounded-full px-2 text-[13px] lg:w-auto lg:px-5 lg:text-[15px]" onClick={onDaily}>
+              <Button variant="secondary" size="sm" className="min-h-[44px] w-full px-2 text-[13px] text-[color:var(--graphite)] hover:text-[color:var(--ink)] lg:w-auto lg:px-5" onClick={onDaily}>
                 Today&rsquo;s 10
               </Button>
-              <Button variant="secondary" className="min-h-[44px] w-full rounded-full px-2 text-[13px] lg:w-auto lg:px-5 lg:text-[15px]" onClick={onChart}>
+              <Button variant="secondary" size="sm" className="min-h-[44px] w-full px-2 text-[13px] text-[color:var(--graphite)] hover:text-[color:var(--ink)] lg:w-auto lg:px-5" onClick={onChart}>
                 Charts
               </Button>
             </div>
             <button
               onClick={() => setSheetOpen(true)}
-              className="mx-auto inline-flex min-h-[44px] items-center gap-1.5 text-[13px] text-[color:var(--graphite)] underline underline-offset-4 lg:mx-0"
+              className="mx-auto inline-flex min-h-[40px] items-center gap-1.5 text-[12px] text-[color:var(--graphite)] underline underline-offset-4 lg:mx-0"
             >
               Display &amp; glossary
             </button>
           </div>
 
+          <p className="order-4 mt-3 max-w-[40ch] text-[14px] text-[color:var(--graphite)] sm:text-[15px]">
+            Preflop open-raise drills for 6-max cash. Get a hand, fold or raise, see the range.
+          </p>
+
+
 
 
           {typeof todayBest === "number" ? (
-            <p className="order-5 mt-4 text-[13px] text-[color:var(--graphite)] lg:order-none">
+            <p className="order-5 mt-3 text-[13px] text-[color:var(--graphite)] lg:order-none">
               Today&rsquo;s best{" "}
               <span className="text-[15px] font-bold tabular-nums text-[color:var(--ink)]">
                 {todayBest}/10
@@ -106,7 +109,7 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
             </p>
           ) : null}
 
-          <div className="order-5 mt-6 flex flex-wrap items-center gap-4 text-[13px] text-[color:var(--graphite)] lg:order-none">
+          <div className="order-5 mt-4 flex flex-wrap items-center gap-4 text-[13px] text-[color:var(--graphite)] lg:order-none">
             <span className="inline-flex items-center gap-2">
               <Keycap>F</Keycap>
               <Tooltip enabled={display.hoverHelp} title={GLOSSARY['FOLD']!.title} text={GLOSSARY['FOLD']!.tooltip}>
@@ -131,7 +134,7 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
           </div>
 
           {played ? (
-            <div className="order-5 mt-6 flex flex-wrap items-center gap-2 lg:order-none">
+            <div className="order-5 mt-4 flex flex-wrap items-center gap-2 lg:order-none">
               <span
                 className="pill"
                 style={{ borderColor: "var(--spruce)", color: "var(--spruce)" }}
@@ -161,7 +164,7 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
           ) : null}
 
           {played ? (
-            <div className="order-5 mt-10 border-t border-[color:var(--bone)] pt-6 lg:order-none">
+            <div className="order-5 mt-6 w-full border-t border-[color:var(--bone)] pt-5 lg:order-none">
               <dl className="grid grid-cols-3 gap-4 sm:flex sm:gap-12">
                 <div>
                   <dt className="text-[13px] text-[color:var(--graphite)]">Accuracy</dt>
@@ -258,7 +261,7 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
         </div>
 
         <div className="order-last mx-auto flex w-full max-w-[440px] min-w-0 flex-col items-center lg:max-w-none">
-          <div className="poster-in w-full">
+          <div className="poster-in w-full max-w-[320px] lg:max-w-none">
             <RangeGrid range={btn} maxWidth={520} />
           </div>
           <p className="mt-3 self-stretch text-center text-[13px] lg:text-left text-[color:var(--graphite)]">
@@ -276,5 +279,6 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
         />
       ) : null}
     </main>
+
   );
 }
