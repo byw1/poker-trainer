@@ -77,48 +77,61 @@ function App() {
   );
 
   if (screen === "glossary" && glossaryFrom === "home") {
-    return <GlossaryScreen onBack={() => setScreen("home")} />;
+    return (
+      <div className="screen-enter">
+        <GlossaryScreen onBack={() => setScreen("home")} />
+      </div>
+    );
   }
 
   if (screen === "home") {
     return (
-      <Home
-        stats={stats}
-        onStart={() => {
-          setDaily(false);
-          setDrillMode("ALL");
-          setScreen("drill");
-        }}
-        onStartLeaks={() => {
-          setDaily(false);
-          setDrillMode("LEAKS");
-          setScreen("drill");
-        }}
-        onDaily={() => {
-          setDaily(true);
-          setDrillMode("ALL");
-          setScreen("drill");
-        }}
-        onChart={openChartFromHome}
-        onGlossary={() => {
-          setGlossaryFrom("home");
-          setScreen("glossary");
-        }}
-      />
+      <div className="screen-enter">
+        <Home
+          stats={stats}
+          onStart={() => {
+            setDaily(false);
+            setDrillMode("ALL");
+            setScreen("drill");
+          }}
+          onStartLeaks={() => {
+            setDaily(false);
+            setDrillMode("LEAKS");
+            setScreen("drill");
+          }}
+          onDaily={() => {
+            setDaily(true);
+            setDrillMode("ALL");
+            setScreen("drill");
+          }}
+          onChart={openChartFromHome}
+          onGlossary={() => {
+            setGlossaryFrom("home");
+            setScreen("glossary");
+          }}
+        />
+      </div>
     );
   }
 
   // Keep DrillScreen at the same tree position for drill and chart screens so
   // the current question survives a round trip to the chart viewer.
+  // The enter class toggles off while hidden, so it replays on return.
   return (
     <>
-      <div className={screen === "chart" || screen === "glossary" ? "hidden" : undefined}>
+      <div className={screen === "chart" || screen === "glossary" ? "hidden" : "screen-enter"}>
         {drillScreen}
       </div>
       {screen === "chart" ? (
-        <ChartViewer initialPosition={chartPosition} onBack={closeChart} />
+        <div className="screen-enter">
+          <ChartViewer initialPosition={chartPosition} onBack={closeChart} />
+        </div>
       ) : null}
-      {screen === "glossary" ? <GlossaryScreen onBack={() => setScreen("drill")} /> : null}
+      {screen === "glossary" ? (
+        <div className="screen-enter">
+          <GlossaryScreen onBack={() => setScreen("drill")} />
+        </div>
+      ) : null}
     </>
   );
 }
