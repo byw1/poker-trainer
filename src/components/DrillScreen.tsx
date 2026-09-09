@@ -17,6 +17,7 @@ import { LogoMark } from "./Logo";
 import { useDisplay } from "@/lib/display";
 import { DisplaySheet } from "./DisplaySheet";
 
+
 import { BADGES, type BadgeId } from "@/lib/progress";
 
 const SUITS: PlayingCardSuit[] = ["spades", "hearts", "diamonds", "clubs"];
@@ -365,10 +366,11 @@ export function DrillScreen({
             Display
           </button>
         </div>
+
       </div>
 
       {stats.totalAnswered > 0 ? (
-        <div className="mt-1.5 flex w-full flex-wrap items-center justify-center gap-1 sm:mt-3 sm:gap-1.5 sm:justify-start">
+        <div className="mt-3 flex w-full flex-wrap items-center justify-center gap-2 sm:mt-4 sm:justify-start">
           <span className="chip inline-flex">{accuracy}% accurate</span>
           <span className="chip inline-flex gap-1">
             Streak
@@ -378,7 +380,7 @@ export function DrillScreen({
         </div>
       ) : null}
 
-      <div className="mt-2 flex w-full shrink-0 flex-col items-center gap-1.5 sm:mt-6 sm:gap-2">
+      <div className="mt-3 flex w-full shrink-0 flex-col items-center gap-3 sm:mt-6">
         {daily ? (
           dailyDone ? null : (
             <div className="flex flex-col items-center gap-2">
@@ -441,6 +443,7 @@ export function DrillScreen({
             {GLOSSARY[mode]?.caption ?? ""}
           </p>
         ) : null}
+
         {!daily && mode === "LEAKS" && leaks.length === 0 ? (
           <p className="text-[13px] text-[color:var(--graphite)]">
             Play a round first — leaks appear after misses
@@ -448,7 +451,7 @@ export function DrillScreen({
         ) : null}
       </div>
 
-      <div className="drill-body flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+      <div className="drill-body flex min-h-0 w-full flex-1 flex-col">
       {dailyDone ? (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto py-3 sm:mt-16 sm:block">
           <p className="text-[13px] text-[color:var(--graphite)]">Today&rsquo;s 10 &mdash; {dateKey}</p>
@@ -471,12 +474,13 @@ export function DrillScreen({
             <Button variant="secondary" size="lg" className="h-12 w-full sm:h-[56px] sm:w-[200px]" onClick={goHome}>
               Back home
             </Button>
+
           </div>
         </div>
       ) : (
       <>
-       <div className="mt-1 flex shrink-0 flex-col items-center sm:mt-10">
-         <div className="flex flex-col items-center gap-0.5 sm:gap-2">
+       <div className="mt-3 flex min-h-0 shrink flex-col items-center sm:mt-10">
+         <div className="flex flex-col items-center gap-3">
            {display.table ? <SeatRing active={question.prompt.position} width={isPhone ? 190 : 300} hoverHelp={display.hoverHelp} /> : null}
           <Tooltip
             title={GLOSSARY['FOLDED_TO_YOU']!.title}
@@ -489,9 +493,11 @@ export function DrillScreen({
           </Tooltip>
         </div>
 
+
+
         <div
           key={`${question.prompt.hand}-${seed}`}
-           className={`cards-3d mt-1 flex items-center justify-center sm:mt-6 ${
+            className={`cards-3d mt-3 flex items-center justify-center sm:mt-6 ${
             pressed === "raise" ? "cards-raised-3d" : pressed ? "cards-folded-3d" : ""
           } cards-stage`}
         >
@@ -513,7 +519,7 @@ export function DrillScreen({
           </div>
         </div>
 
-         <p className="mt-1 text-[12px] text-[color:var(--graphite)] sm:mt-4 sm:text-[13px]">
+         <p className="mt-3 text-[12px] text-[color:var(--graphite)] sm:mt-4 sm:text-[13px]">
           <Tooltip title={question.prompt.hand} text={describeHand(question.prompt.hand)} enabled={display.hoverHelp}>
             <span className="cursor-help underline decoration-dotted decoration-[color:var(--bone)] underline-offset-4">
               {question.prompt.hand}
@@ -524,7 +530,7 @@ export function DrillScreen({
 
       {!result ? (
         <div
-           className="action-dock z-30 mt-auto grid w-full shrink-0 grid-cols-3 gap-2 border-t pt-2 sm:static sm:mt-10 sm:flex sm:justify-center sm:gap-4 sm:border-0 sm:pt-0"
+            className="action-dock z-30 mt-auto grid w-full shrink-0 grid-cols-3 gap-3 border-t pt-3 sm:static sm:mt-10 sm:flex sm:justify-center sm:gap-4 sm:border-0 sm:pt-0"
           style={{ backgroundColor: "var(--paper)", borderColor: "var(--bone)" }}
         >
           <Button autoFocus variant="fold" size="lg" className="h-[52px] w-full text-[16px] sm:h-[56px] sm:w-[160px] sm:text-[17px]" onClick={() => answer("fold")}>
@@ -537,8 +543,9 @@ export function DrillScreen({
             Raise <span className="hidden sm:inline-flex"><Keycap>R</Keycap></span>
           </Button>
         </div>
+
       ) : (
-        <div className="result-fade-up mt-1 flex min-h-0 w-full min-w-0 flex-1 flex-col items-center overflow-y-auto overscroll-contain pb-[calc(60px+env(safe-area-inset-bottom))] sm:mt-8 sm:overflow-visible sm:pb-0">
+        <div className="result-fade-up mt-3 flex min-h-0 w-full min-w-0 flex-1 flex-col items-center overflow-y-auto overscroll-contain pb-3 sm:mt-8 sm:overflow-visible sm:pb-0">
           <div
             className={`flex items-center gap-3 ${result.correct ? "" : "verdict-shake"}`}
           >
@@ -563,6 +570,7 @@ export function DrillScreen({
             <StreamText text={result.explanation} charsPerTick={2} tickMs={9} />
           </p>
 
+
           {display.insight ? (
             <InsightCard
               hand={question.prompt.hand}
@@ -570,6 +578,7 @@ export function DrillScreen({
               chosen={result.chosen}
             />
           ) : null}
+
 
           {newBadges.length > 0 ? (
             <div className="insight-in mt-3 flex flex-wrap justify-center gap-2">
@@ -594,17 +603,21 @@ export function DrillScreen({
             </button>
           ) : null}
 
+
           {result.visual && display.rangeAfter ? (
             <div className="mt-7 flex w-full min-w-0 justify-center">
               <RangeGrid range={result.visual.range} highlight={result.visual.highlight} reveal />
             </div>
           ) : null}
 
+
           <Button autoFocus variant="primary" className="sticky bottom-0 mt-3 min-h-[48px] w-full shrink-0 sm:static sm:mt-8 sm:w-auto" onClick={() => next()}>
             Next hand <span className="fine-only"><Keycap>Space</Keycap></span>
           </Button>
+
         </div>
       )}
+
       </>
       )}
       </div>
@@ -647,6 +660,7 @@ export function DrillScreen({
           ]}
         />
       ) : null}
+
 
     </main>
   );

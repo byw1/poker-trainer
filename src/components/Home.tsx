@@ -38,9 +38,9 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
 
   return (
     <main className={`home-shell mx-auto flex w-full max-w-[1120px] flex-col justify-center px-4 py-3 sm:min-h-screen sm:px-6 sm:py-16 ${played ? "home-played" : "home-empty"}`}>
-      <div className="grid items-center gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-14">
+      <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-14">
         <div className="mx-auto flex w-full max-w-[440px] min-w-0 flex-col items-center text-center lg:mx-0 lg:block lg:max-w-none lg:text-left">
-          <div className="order-1 mb-1 lg:mb-4">
+           <div className="order-1 mb-3 lg:mb-4">
             <span className="lg:hidden">
               <Logo size={56} wordmark={false} />
             </span>
@@ -53,22 +53,22 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
             Poker Trainer
           </h1>
 
-          <p className="order-1 mt-1 text-[15px] font-medium text-[color:var(--spruce)]">
+          <p className="order-1 mt-2 text-[15px] font-medium text-[color:var(--spruce)]">
             Open. Or don&rsquo;t.
           </p>
 
-          <div className="order-2 mt-1.5 flex flex-col items-center lg:order-none lg:mt-4 lg:items-start">
+          <div className="order-2 mt-4 flex flex-col items-center lg:order-none lg:mt-5 lg:items-start">
             {display.table ? (
               <>
                 <SeatRing active="BTN" width={210} showFolds={false} hoverHelp={display.hoverHelp} />
-                <p className="mt-1 text-[12px] text-[color:var(--graphite)]">
+                <p className="mt-3 text-[12px] text-[color:var(--graphite)]">
                   You are on the button. Seats go clockwise.
                 </p>
               </>
             ) : null}
           </div>
 
-          <div className="order-3 mt-2 flex w-full flex-col items-center gap-1.5 lg:mt-4 lg:items-start lg:gap-2">
+          <div className="order-3 mt-4 flex w-full flex-col items-center gap-3 lg:mt-5 lg:items-start lg:gap-3">
             <Button
               variant="primary"
               size="xl"
@@ -77,7 +77,7 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
             >
               Start drill
             </Button>
-            <div className="mx-auto grid w-full max-w-[320px] grid-cols-2 gap-2 lg:mx-0 lg:flex lg:max-w-none lg:gap-3">
+            <div className="mx-auto grid w-full max-w-[320px] grid-cols-2 gap-3 lg:mx-0 lg:flex lg:max-w-none lg:gap-3">
               <Button variant="secondary" size="sm" className="min-h-[44px] w-full px-2 text-[13px] text-[color:var(--graphite)] hover:text-[color:var(--ink)] lg:w-auto lg:px-5" onClick={onDaily}>
                 Today&rsquo;s 10
               </Button>
@@ -93,7 +93,7 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
             </button>
           </div>
 
-          <p className="order-4 mt-1.5 max-w-[40ch] text-[13px] text-[color:var(--graphite)] sm:mt-3 sm:text-[15px]">
+          <p className="order-4 mt-4 max-w-[40ch] text-[13px] text-[color:var(--graphite)] sm:mt-4 sm:text-[15px]">
             Preflop open-raise drills for 6-max cash. Get a hand, fold or raise, see the range.
           </p>
 
@@ -109,7 +109,7 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
             </p>
           ) : null}
 
-          <div className="fine-only order-5 mt-2 flex flex-wrap items-center gap-4 text-[13px] text-[color:var(--graphite)] lg:order-none lg:mt-4">
+          <div className="fine-only order-5 mt-4 flex flex-wrap items-center gap-4 text-[13px] text-[color:var(--graphite)] lg:order-none lg:mt-5">
             <span className="inline-flex items-center gap-2">
               <Keycap>F</Keycap>
               <Tooltip enabled={display.hoverHelp} title={GLOSSARY['FOLD']!.title} text={GLOSSARY['FOLD']!.tooltip}>

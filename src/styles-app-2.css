@@ -358,8 +358,29 @@
 @utility hero-lift {
   transform: translateZ(0);
   box-shadow:
-    0 1px 2px color-mix(in oklch, var(--ink) 14%, transparent),
-    0 10px 20px -10px color-mix(in oklch, var(--ink) 40%, transparent);
+    inset 0 1px 0 color-mix(in oklch, var(--paper) 35%, transparent),
+    0 2px 3px color-mix(in oklch, var(--ink) 16%, transparent),
+    0 12px 22px -12px color-mix(in oklch, var(--ink) 42%, transparent);
+}
+
+@utility button-primary-depth {
+  box-shadow: inset 0 1px 0 color-mix(in oklch, var(--paper) 28%, transparent), 0 4px 10px -5px color-mix(in oklch, var(--ink) 48%, transparent);
+}
+
+@utility button-secondary-depth {
+  box-shadow: inset 0 1px 0 var(--paper), 0 3px 8px -6px color-mix(in oklch, var(--ink) 38%, transparent);
+}
+
+@utility button-fold-depth {
+  box-shadow: inset 0 1px 0 var(--paper), 0 4px 9px -6px color-mix(in oklch, var(--ink) 45%, transparent);
+}
+
+@utility button-call-depth {
+  box-shadow: inset 0 1px 0 var(--paper), 0 4px 9px -6px color-mix(in oklch, var(--ink) 45%, transparent);
+}
+
+@utility button-raise-depth {
+  box-shadow: inset 0 1px 0 color-mix(in oklch, var(--paper) 24%, transparent), 0 5px 11px -6px color-mix(in oklch, var(--crimson) 70%, var(--ink));
 }
 
 /* Screen transition: brief fade + rise. */
