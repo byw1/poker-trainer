@@ -192,7 +192,7 @@ export function SeatRing({
 }) {
   // Never wider than the phone viewport minus page gutters.
   const vw = useViewportWidth();
-  const w = Math.max(200, Math.min(width, vw - 40));
+  const w = Math.max(180, Math.min(width, vw - 40));
   const compact = w < 270;
   const h = Math.round(w * (compact ? 0.72 : 0.64));
   const cx = w / 2;
