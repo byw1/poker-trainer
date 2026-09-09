@@ -17,15 +17,15 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "bg-[color:var(--spruce)] text-[color:var(--paper)] border border-transparent hover:opacity-90",
+          "button-primary-depth bg-[color:var(--spruce)] text-[color:var(--paper)] border border-[color:var(--spruce)] hover:opacity-90",
         secondary:
-          "bg-[color:var(--paper)] text-[color:var(--ink)] border border-[color:var(--bone)] hover:border-[color:var(--graphite)]",
+          "button-secondary-depth bg-[color:var(--paper)] text-[color:var(--ink)] border border-[color:var(--bone)] hover:border-[color:var(--graphite)]",
         outline:
           "bg-[color:var(--paper)] text-[color:var(--ink)] border border-[color:var(--ink)] hover:opacity-85",
-        fold: "bg-[color:var(--bone)] text-[color:var(--ink)] border border-transparent hover:opacity-90",
-        call: "bg-[color:var(--paper)] text-[color:var(--ink)] border border-[color:var(--ink)] hover:opacity-85",
+        fold: "button-fold-depth bg-[color:var(--bone)] text-[color:var(--ink)] border border-[color:var(--graphite)] hover:opacity-90",
+        call: "button-call-depth bg-[color:var(--paper)] text-[color:var(--ink)] border border-[color:var(--ink)] hover:opacity-90",
         raise:
-          "bg-[color:var(--crimson)] text-[color:var(--paper)] border border-transparent hover:opacity-90",
+          "button-raise-depth bg-[color:var(--crimson)] text-[color:var(--paper)] border border-[color:var(--crimson)] hover:opacity-90",
         quiet:
           "bg-transparent text-[color:var(--graphite)] border border-transparent hover:text-[color:var(--ink)]",
       },

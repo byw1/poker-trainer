@@ -11,7 +11,16 @@ export interface DisplaySettings {
 
 export const DISPLAY_KEY = "poker-trainer-display";
 
-export const DEFAULT_DISPLAY: DisplaySettings = {
+export const MOBILE_DEFAULT_DISPLAY: DisplaySettings = {
+  table: false,
+  captions: false,
+  hoverHelp: false,
+  insight: false,
+  rangeAfter: false,
+  sound: true,
+};
+
+export const DESKTOP_DEFAULT_DISPLAY: DisplaySettings = {
   table: true,
   captions: true,
   hoverHelp: true,
@@ -20,15 +29,30 @@ export const DEFAULT_DISPLAY: DisplaySettings = {
   sound: true,
 };
 
+/** Kept as the stable merge base for previously saved, possibly partial settings. */
+export const DEFAULT_DISPLAY = DESKTOP_DEFAULT_DISPLAY;
+
+const HYDRATION_DISPLAY: DisplaySettings = {
+  ...MOBILE_DEFAULT_DISPLAY,
+  sound: true,
+};
+
+export function getDefaultDisplay(): DisplaySettings {
+  if (typeof window === "undefined") return HYDRATION_DISPLAY;
+  return window.matchMedia("(max-width: 640px)").matches
+    ? MOBILE_DEFAULT_DISPLAY
+    : DESKTOP_DEFAULT_DISPLAY;
+}
+
 export function loadDisplay(): DisplaySettings {
-  if (typeof window === "undefined") return DEFAULT_DISPLAY;
+  if (typeof window === "undefined") return HYDRATION_DISPLAY;
   try {
     const raw = window.localStorage.getItem(DISPLAY_KEY);
-    if (!raw) return DEFAULT_DISPLAY;
+    if (!raw) return getDefaultDisplay();
     const parsed = JSON.parse(raw) as Partial<DisplaySettings>;
-    return { ...DEFAULT_DISPLAY, ...parsed };
+    return { ...DESKTOP_DEFAULT_DISPLAY, ...parsed };
   } catch {
-    return DEFAULT_DISPLAY;
+    return getDefaultDisplay();
   }
 }
 
@@ -42,7 +66,7 @@ export function saveDisplay(s: DisplaySettings) {
 
 /** Hydration-safe display settings: defaults on the server, stored values after mount. */
 export function useDisplay() {
-  const [display, setDisplay] = useState<DisplaySettings>(DEFAULT_DISPLAY);
+  const [display, setDisplay] = useState<DisplaySettings>(HYDRATION_DISPLAY);
 
   useEffect(() => {
     setDisplay(loadDisplay());
