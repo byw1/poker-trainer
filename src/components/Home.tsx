@@ -40,7 +40,7 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
     <main className={`home-shell mx-auto flex w-full max-w-[1120px] flex-col justify-center px-4 py-3 sm:min-h-screen sm:px-6 sm:py-16 ${played ? "home-played" : "home-empty"}`}>
       <div className="grid items-center gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-14">
         <div className="mx-auto flex w-full max-w-[440px] min-w-0 flex-col items-center text-center lg:mx-0 lg:block lg:max-w-none lg:text-left">
-           <div className="order-1 mb-1 lg:mb-4">
+          <div className="order-1 mb-1 lg:mb-4">
             <span className="lg:hidden">
               <Logo size={56} wordmark={false} />
             </span>

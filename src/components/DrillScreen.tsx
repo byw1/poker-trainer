@@ -81,6 +81,7 @@ export type Mode = "ALL" | Position | "LEAKS";
 const MODES: Mode[] = ["ALL", ...POSITIONS, "LEAKS"];
 const MODE_LABEL: Record<string, string> = { ALL: "All", LEAKS: "Leaks" };
 
+/** Hand classes the user has missed, worst accuracy first, then most misses. */
 function leakHands(stats: Stats): string[] {
   return Object.entries(stats.byHand)
     .filter(([, v]) => v.answered >= 1 && v.correct < v.answered)
@@ -99,10 +100,13 @@ interface Props {
   onStats: (s: Stats) => void;
   onHome: () => void;
   onChart: (position: Position) => void;
+  /** Opens the glossary screen (G). */
   onGlossary: () => void;
   suspended?: boolean;
+  /** Daily challenge: 10 fixed, date-seeded hands. */
   daily?: boolean;
   onExitDaily?: () => void;
+  /** Practice mode to start in (e.g. "LEAKS" from a Home leak row). */
   initialMode?: Mode;
 }
 
@@ -131,7 +135,6 @@ export function DrillScreen({
   const leaks = useMemo(() => leakHands(stats), [stats]);
   const leaksRef = useRef(leaks);
   leaksRef.current = leaks;
-  const verdictRef = useRef<HTMLDivElement>(null);
 
   const optionsFor = useCallback((m: Mode): GenerateOptions => {
     if (m === "ALL") return {};
@@ -164,20 +167,17 @@ export function DrillScreen({
     if (!soundOn) sound.flip();
   }, [setDisplay, soundOn]);
 
-  useEffect(() => {
-    if (result && verdictRef.current) {
-      verdictRef.current.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
-    }
-  }, [result]);
 
   const seed = useMemo(() => Math.random(), [question]);
 
+  // Deal ticks + the paper flip, matching the card animation timings.
   useEffect(() => {
     sound.deal();
     const t = window.setTimeout(() => sound.flip(), 240);
     return () => window.clearTimeout(t);
   }, [question]);
   const cards = handCards(question.prompt.hand, seed);
+
 
   const answer = useCallback(
     (action: Action) => {
@@ -231,6 +231,7 @@ export function DrillScreen({
     [drill, mode, optionsFor, daily, dailyIndex, dailySet],
   );
 
+  // Replay today's same 10 hands; Back home is what leaves daily mode.
   const playAgain = useCallback(() => {
     setDailyIndex(0);
     setDailyScore(0);
@@ -267,6 +268,7 @@ export function DrillScreen({
         return;
       }
       if (dailyDone) {
+        // The round is over; don't let Space re-trigger the focused button.
         if (e.key === " ") e.preventDefault();
         return;
       }
@@ -298,24 +300,24 @@ export function DrillScreen({
   const handsLabel = stats.totalAnswered === 1 ? "1 hand" : `${stats.totalAnswered} hands`;
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[440px] flex-col items-center px-4 py-6 text-center sm:max-w-[720px] sm:items-stretch sm:px-6 sm:py-8 sm:text-left">
+    <main className="drill-shell mx-auto flex w-full max-w-[440px] flex-col items-center px-4 py-3 text-center sm:min-h-screen sm:max-w-[720px] sm:items-stretch sm:px-6 sm:py-8 sm:text-left">
       <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 text-[13px] text-[color:var(--graphite)]">
         <button
           onClick={goHome}
           aria-label="Home"
           className="inline-flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
         >
-          <LogoMark size={32} />
+          <LogoMark size={28} />
           <span className="hidden font-bold tracking-[-0.02em] text-[color:var(--ink)] sm:inline">
             Poker Trainer
           </span>
         </button>
         <div className="ml-auto flex items-center gap-2">
-        <button
+          <button
             onClick={toggleSound}
             aria-pressed={soundOn}
             aria-label={soundOn ? "Mute sound" : "Unmute sound"}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-[4px] border border-[color:var(--bone)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-[4px] border border-[color:var(--bone)] sm:h-11 sm:w-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
             style={{ color: soundOn ? "var(--ink)" : "var(--graphite)" }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
@@ -348,7 +350,7 @@ export function DrillScreen({
           <button
             onClick={() => setSheetOpen(true)}
             aria-label="Display settings"
-            className="inline-flex h-11 items-center gap-1.5 rounded-[4px] border border-[color:var(--bone)] px-3 text-[13px] text-[color:var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+            className="inline-flex h-10 items-center gap-1.5 rounded-[4px] border border-[color:var(--bone)] px-2.5 text-[12px] text-[color:var(--ink)] sm:h-11 sm:px-3 sm:text-[13px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden>
               <circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
@@ -366,7 +368,7 @@ export function DrillScreen({
       </div>
 
       {stats.totalAnswered > 0 ? (
-        <div className="mt-3 flex w-full flex-wrap items-center justify-center gap-1.5 sm:justify-start">
+        <div className="mt-1.5 flex w-full flex-wrap items-center justify-center gap-1 sm:mt-3 sm:gap-1.5 sm:justify-start">
           <span className="chip inline-flex">{accuracy}% accurate</span>
           <span className="chip inline-flex gap-1">
             Streak
@@ -376,7 +378,7 @@ export function DrillScreen({
         </div>
       ) : null}
 
-      <div className="mt-6 flex flex-col items-center gap-2">
+      <div className="mt-2 flex w-full shrink-0 flex-col items-center gap-1.5 sm:mt-6 sm:gap-2">
         {daily ? (
           dailyDone ? null : (
             <div className="flex flex-col items-center gap-2">
@@ -398,7 +400,7 @@ export function DrillScreen({
         <div
           role="group"
           aria-label="Practice mode"
-          className="no-scrollbar -mx-4 flex max-w-full snap-x snap-mandatory items-stretch overflow-x-auto px-4 sm:mx-0 sm:inline-flex sm:overflow-hidden sm:rounded-[3px] sm:border sm:border-[color:var(--bone)] sm:px-0"
+          className="hidden sm:inline-flex sm:overflow-hidden sm:rounded-[3px] sm:border sm:border-[color:var(--bone)]"
         >
           {MODES.map((m) => (
             <button
@@ -419,6 +421,21 @@ export function DrillScreen({
           ))}
         </div>
         )}
+        {!daily ? (
+          <label className="grid w-full max-w-[240px] grid-cols-[auto_minmax(0,1fr)] items-center gap-2 text-[12px] text-[color:var(--graphite)] sm:hidden">
+            <span>Mode</span>
+            <select
+              aria-label="Practice mode"
+              value={mode}
+              onChange={(event) => pickMode(event.target.value as Mode)}
+              className="h-10 min-w-0 rounded-[4px] border border-[color:var(--bone)] bg-[color:var(--paper)] px-3 text-[13px] font-medium text-[color:var(--ink)]"
+            >
+              {MODES.map((m) => (
+                <option key={m} value={m}>{MODE_LABEL[m] ?? m}</option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         {!daily && display.captions ? (
           <p className="max-w-full text-center text-[13px] text-[color:var(--graphite)]">
             {GLOSSARY[mode]?.caption ?? ""}
@@ -431,8 +448,9 @@ export function DrillScreen({
         ) : null}
       </div>
 
+      <div className="drill-body flex min-h-0 w-full flex-1 flex-col overflow-hidden">
       {dailyDone ? (
-        <div className="mt-16 flex flex-col items-center">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto py-3 sm:mt-16 sm:block">
           <p className="text-[13px] text-[color:var(--graphite)]">Today&rsquo;s 10 &mdash; {dateKey}</p>
           <p className="mt-2 text-[48px] sm:text-[64px] font-bold leading-none tracking-[-0.03em] tabular-nums text-[color:var(--ink)]">
             {dailyScore}/10
@@ -457,9 +475,9 @@ export function DrillScreen({
         </div>
       ) : (
       <>
-      <div className="mt-10 flex flex-col items-center">
-        <div className="flex flex-col items-center gap-2">
-          {display.table ? <SeatRing active={question.prompt.position} width={isPhone ? 240 : 300} hoverHelp={display.hoverHelp} /> : null}
+       <div className="mt-1 flex shrink-0 flex-col items-center sm:mt-10">
+         <div className="flex flex-col items-center gap-0.5 sm:gap-2">
+           {display.table ? <SeatRing active={question.prompt.position} width={isPhone ? 190 : 300} hoverHelp={display.hoverHelp} /> : null}
           <Tooltip
             title={GLOSSARY['FOLDED_TO_YOU']!.title}
             text={GLOSSARY['FOLDED_TO_YOU']!.tooltip}
@@ -473,7 +491,7 @@ export function DrillScreen({
 
         <div
           key={`${question.prompt.hand}-${seed}`}
-          className={`cards-3d mt-6 flex items-center justify-center ${
+           className={`cards-3d mt-1 flex items-center justify-center sm:mt-6 ${
             pressed === "raise" ? "cards-raised-3d" : pressed ? "cards-folded-3d" : ""
           } cards-stage`}
         >
@@ -482,7 +500,7 @@ export function DrillScreen({
             suit={cards[0]!.suit}
             tilt={-4}
             delay={0}
-            width={isPhone ? 110 : 128}
+             width={isPhone ? 92 : 128}
           />
           <div className={isPhone ? "-ml-4" : "-ml-6"}>
             <DealtCard
@@ -490,12 +508,12 @@ export function DrillScreen({
               suit={cards[1]!.suit}
               tilt={5}
               delay={70}
-              width={isPhone ? 110 : 128}
+               width={isPhone ? 92 : 128}
             />
           </div>
         </div>
 
-        <p className="mt-4 text-[13px] text-[color:var(--graphite)]">
+         <p className="mt-1 text-[12px] text-[color:var(--graphite)] sm:mt-4 sm:text-[13px]">
           <Tooltip title={question.prompt.hand} text={describeHand(question.prompt.hand)} enabled={display.hoverHelp}>
             <span className="cursor-help underline decoration-dotted decoration-[color:var(--bone)] underline-offset-4">
               {question.prompt.hand}
@@ -506,7 +524,7 @@ export function DrillScreen({
 
       {!result ? (
         <div
-          className="action-dock sticky bottom-0 z-30 mt-8 grid w-full grid-cols-3 gap-2 border-t pt-3 sm:static sm:mt-10 sm:flex sm:justify-center sm:gap-4 sm:border-0 sm:pt-0"
+           className="action-dock z-30 mt-auto grid w-full shrink-0 grid-cols-3 gap-2 border-t pt-2 sm:static sm:mt-10 sm:flex sm:justify-center sm:gap-4 sm:border-0 sm:pt-0"
           style={{ backgroundColor: "var(--paper)", borderColor: "var(--bone)" }}
         >
           <Button autoFocus variant="fold" size="lg" className="h-[52px] w-full text-[16px] sm:h-[56px] sm:w-[160px] sm:text-[17px]" onClick={() => answer("fold")}>
@@ -520,9 +538,8 @@ export function DrillScreen({
           </Button>
         </div>
       ) : (
-        <div className="result-fade-up mt-8 flex w-full min-w-0 flex-col items-center">
+        <div className="result-fade-up mt-1 flex min-h-0 w-full min-w-0 flex-1 flex-col items-center overflow-y-auto overscroll-contain pb-[calc(60px+env(safe-area-inset-bottom))] sm:mt-8 sm:overflow-visible sm:pb-0">
           <div
-            ref={verdictRef}
             className={`flex items-center gap-3 ${result.correct ? "" : "verdict-shake"}`}
           >
             <span
@@ -542,7 +559,7 @@ export function DrillScreen({
               {result.correct ? "Correct" : `Incorrect — best is ${result.best}`}
             </p>
           </div>
-          <p className="mt-2 max-w-[46ch] text-center text-[14px] text-[color:var(--graphite)]">
+           <p className="mt-1 max-w-[46ch] text-center text-[13px] text-[color:var(--graphite)] sm:mt-2 sm:text-[14px]">
             <StreamText text={result.explanation} charsPerTick={2} tickMs={9} />
           </p>
 
@@ -583,13 +600,14 @@ export function DrillScreen({
             </div>
           ) : null}
 
-          <Button autoFocus variant="primary" className="mt-8 min-h-[48px] w-full sm:w-auto" onClick={() => next()}>
+          <Button autoFocus variant="primary" className="sticky bottom-0 mt-3 min-h-[48px] w-full shrink-0 sm:static sm:mt-8 sm:w-auto" onClick={() => next()}>
             Next hand <span className="fine-only"><Keycap>Space</Keycap></span>
           </Button>
         </div>
       )}
       </>
       )}
+      </div>
 
       <div className="fine-only mt-auto flex flex-wrap justify-center gap-5 pt-10 text-[12px] text-[color:var(--graphite)]">
         <span className="inline-flex items-center gap-2">

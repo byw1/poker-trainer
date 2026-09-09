@@ -2,6 +2,8 @@
 @source "../src";
 @import "tw-animate-css";
 
+@import "./mobile-shell.css";
+
 @custom-variant dark (&:is(.dark *));
 
 /*
