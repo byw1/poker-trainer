@@ -38,3 +38,9 @@
     animation-duration: 260ms;
   }
 }
+
+@media (min-width: 640px) {
+  .action-dock {
+    padding-bottom: 0;
+  }
+}
