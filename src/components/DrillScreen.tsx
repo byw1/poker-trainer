@@ -1,1 +1,725 @@
-PLACEHOLDER
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { RangeGrid } from "./RangeGrid";
+import { Keycap, SeatRing, SeatIcon } from "./Bits";
+import { PlayingCard, type PlayingCardRank, type PlayingCardSuit } from "./PlayingCard";
+import { POSITIONS, type Position } from "@/lib/charts";
+import type { Drill, Action, GenerateOptions, Question, Result } from "@/drills/types";
+import { recordAnswer, recordDaily, type Stats } from "@/lib/storage";
+import { DAILY_COUNT, dailyQuestions, todayKey } from "@/lib/daily";
+import { GLOSSARY, describeHand } from "@/lib/glossary";
+import { Tooltip } from "./Tooltip";
+import { initSound, setSoundEnabled, sound } from "@/lib/sound";
+import { InsightCard } from "./InsightCard";
+import { Button } from "./ui/Button";
+import { useIsPhone } from "@/lib/useViewport";
+import { StreamText } from "./ui/StreamText";
+import { LogoMark } from "./Logo";
+import { useDisplay } from "@/lib/display";
+import { DisplaySheet } from "./DisplaySheet";
+
+
+import { BADGES, XP_CORRECT, type BadgeId } from "@/lib/progress";
+
+/** Short beginner-friendly praise, varied lightly by action and seat. */
+function praise(action: Action, position: Position): string {
+  if (action === "fold") return position === "UTG" || position === "MP" ? "Good fold" : "Solid fold";
+  if (action === "raise") return position === "BTN" || position === "SB" ? "Nice open" : "Clean raise";
+  return "Nice";
+}
+
+const SUITS: PlayingCardSuit[] = ["spades", "hearts", "diamonds", "clubs"];
+
+function toRank(c: string): PlayingCardRank {
+  return (c === "T" ? "10" : c) as PlayingCardRank;
+}
+
+function handCards(hand: string, rng: number): { rank: PlayingCardRank; suit: PlayingCardSuit }[] {
+  const a = hand[0] ?? "A";
+  const b = hand[1] ?? "A";
+  const i = Math.floor(rng * 4) % 4;
+  const j = hand.endsWith("s") ? i : (i + 1 + Math.floor(rng * 3)) % 4;
+  return [
+    { rank: toRank(a), suit: SUITS[i]! },
+    { rank: toRank(b), suit: SUITS[j]! },
+  ];
+}
+
+/** Deals face-down, then flips face-up in place. */
+function DealtCard({
+  rank,
+  suit,
+  tilt,
+  delay,
+  width = 128,
+}: {
+  rank: PlayingCardRank;
+  suit: PlayingCardSuit;
+  tilt: number;
+  delay: number;
+  width?: number;
+}) {
+  return (
+    <div
+      className="card-deal-3d card-hover-tilt"
+      style={
+        {
+          "--card-tilt": `${tilt}deg`,
+          "--card-delay": `${delay}ms`,
+        } as React.CSSProperties
+      }
+    >
+      <div className="card-flipper relative">
+        <div className="card-face">
+          <PlayingCard rank={rank} suit={suit} width={width} />
+        </div>
+        <div
+          className="card-face absolute inset-0"
+          style={{ transform: "rotateY(180deg)" }}
+          aria-hidden
+        >
+          <PlayingCard rank={rank} suit={suit} width={width} faceDown />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+export type Mode = "ALL" | Position | "LEAKS";
+const MODES: Mode[] = ["ALL", ...POSITIONS, "LEAKS"];
+const MODE_LABEL: Record<string, string> = { ALL: "All", LEAKS: "Leaks" };
+
+/** Hand classes the user has missed, worst accuracy first, then most misses. */
+function leakHands(stats: Stats): string[] {
+  return Object.entries(stats.byHand)
+    .filter(([, v]) => v.answered >= 1 && v.correct < v.answered)
+    .sort((a, b) => {
+      const accA = a[1].correct / a[1].answered;
+      const accB = b[1].correct / b[1].answered;
+      if (accA !== accB) return accA - accB;
+      return b[1].answered - b[1].correct - (a[1].answered - a[1].correct);
+    })
+    .map(([h]) => h);
+}
+
+interface Props {
+  drill: Drill;
+  stats: Stats;
+  onStats: (s: Stats) => void;
+  onHome: () => void;
+  onChart: (position: Position) => void;
+  /** Opens the glossary screen (G). */
+  onGlossary: () => void;
+  suspended?: boolean;
+  /** Daily challenge: 10 fixed, date-seeded hands. */
+  daily?: boolean;
+  onExitDaily?: () => void;
+  /** Practice mode to start in (e.g. "LEAKS" from a Home leak row). */
+  initialMode?: Mode;
+}
+
+export function DrillScreen({
+  drill,
+  stats,
+  onStats,
+  onHome,
+  onChart,
+  onGlossary,
+  suspended = false,
+  daily = false,
+  onExitDaily,
+  initialMode = "ALL",
+}: Props) {
+  const isPhone = useIsPhone();
+  const dateKey = useMemo(() => todayKey(), []);
+  const dailySet = useMemo(
+    () => (daily ? dailyQuestions(drill, dateKey) : []),
+    [daily, drill, dateKey],
+  );
+  const [dailyIndex, setDailyIndex] = useState(0);
+  const [dailyScore, setDailyScore] = useState(0);
+  const dailyDone = daily && dailyIndex >= DAILY_COUNT;
+  const [mode, setMode] = useState<Mode>(initialMode);
+  const leaks = useMemo(() => leakHands(stats), [stats]);
+  const leaksRef = useRef(leaks);
+  leaksRef.current = leaks;
+
+  const optionsFor = useCallback((m: Mode): GenerateOptions => {
+    if (m === "ALL") return {};
+    if (m === "LEAKS") return { leakHands: leaksRef.current };
+    return { position: m };
+  }, []);
+
+  const [question, setQuestion] = useState<Question>(
+    () =>
+      (daily ? dailySet[0] : undefined) ??
+      drill.generateQuestion(Math.random, optionsFor(initialMode)),
+  );
+  const [result, setResult] = useState<Result | null>(null);
+  const [pressed, setPressed] = useState<Action | null>(null);
+  const [newBadges, setNewBadges] = useState<BadgeId[]>([]);
+  /** Chosen action briefly flashed spruce before the result panel takes over. */
+  const [flash, setFlash] = useState<Action | null>(null);
+  const [streakPop, setStreakPop] = useState(0);
+  const prevStreak = useRef(stats.currentStreak);
+
+  useEffect(() => {
+    const s = stats.currentStreak;
+    if (s > prevStreak.current && (s === 3 || s === 5 || s === 10)) {
+      setStreakPop((n) => n + 1);
+    }
+    prevStreak.current = s;
+  }, [stats.currentStreak]);
+  const { display, set: setDisplay } = useDisplay();
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const soundOn = display.sound;
+
+  useEffect(() => {
+    initSound();
+  }, []);
+
+  useEffect(() => {
+    setSoundEnabled(display.sound);
+  }, [display.sound]);
+
+  const toggleSound = useCallback(() => {
+    setDisplay({ sound: !soundOn });
+    if (!soundOn) sound.flip();
+  }, [setDisplay, soundOn]);
+
+
+  const seed = useMemo(() => Math.random(), [question]);
+
+  // Deal ticks + the paper flip, matching the card animation timings.
+  useEffect(() => {
+    sound.deal();
+    const t = window.setTimeout(() => sound.flip(), isPhone ? 195 : 240);
+    return () => window.clearTimeout(t);
+  }, [question]);
+  const cards = handCards(question.prompt.hand, seed);
+
+
+  const answer = useCallback(
+    (action: Action) => {
+      if (result) return;
+      setPressed(action);
+      if (action === "raise") sound.raise();
+      else sound.fold();
+      const r = drill.checkAnswer(question, action);
+      setResult(r);
+      if (r.correct) {
+        setFlash(action);
+        window.setTimeout(() => setFlash(null), 420);
+      }
+      window.setTimeout(() => (r.correct ? sound.correct() : sound.incorrect()), 180);
+      let updated = recordAnswer(
+        stats,
+        question.prompt.position,
+        question.prompt.hand,
+        r.correct,
+        action,
+      );
+      if (daily) {
+        const score = dailyScore + (r.correct ? 1 : 0);
+        setDailyScore(score);
+        if (dailyIndex + 1 >= DAILY_COUNT) updated = recordDaily(updated, dateKey, score);
+      }
+      const fresh = updated.badges.filter((b) => !stats.badges.includes(b));
+      if (fresh.length > 0) {
+        setNewBadges(fresh);
+        window.setTimeout(() => setNewBadges([]), 2000);
+      }
+      onStats(updated);
+    },
+    [drill, question, result, stats, onStats, daily, dailyIndex, dailyScore, dateKey],
+  );
+
+  const next = useCallback(
+    (m: Mode = mode) => {
+      if (daily) {
+        const i = dailyIndex + 1;
+        if (i >= DAILY_COUNT) {
+          setDailyIndex(i);
+          return;
+        }
+        setResult(null);
+        setPressed(null);
+        setDailyIndex(i);
+        setQuestion(dailySet[i] ?? drill.generateQuestion(Math.random));
+        return;
+      }
+      setResult(null);
+      setPressed(null);
+      setQuestion(drill.generateQuestion(Math.random, optionsFor(m)));
+    },
+    [drill, mode, optionsFor, daily, dailyIndex, dailySet],
+  );
+
+  // Replay today's same 10 hands; Back home is what leaves daily mode.
+  const playAgain = useCallback(() => {
+    setDailyIndex(0);
+    setDailyScore(0);
+    setResult(null);
+    setPressed(null);
+    setQuestion(dailySet[0] ?? drill.generateQuestion(Math.random));
+  }, [drill, dailySet]);
+
+  const goHome = useCallback(() => {
+    onExitDaily?.();
+    onHome();
+  }, [onExitDaily, onHome]);
+
+  const pickMode = useCallback(
+    (m: Mode) => {
+      setMode(m);
+      next(m);
+    },
+    [next],
+  );
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (suspended) return;
+      if (e.key === "g" || e.key === "G") {
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        e.preventDefault();
+        onGlossary();
+        return;
+      }
+      if (e.key === "?") {
+        e.preventDefault();
+        onChart(question.prompt.position);
+        return;
+      }
+      if (dailyDone) {
+        // The round is over; don't let Space re-trigger the focused button.
+        if (e.key === " ") e.preventDefault();
+        return;
+      }
+      const plain = !daily && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey;
+      if (plain && e.key >= "1" && e.key <= "5") {
+        e.preventDefault();
+        pickMode(POSITIONS[Number(e.key) - 1] as Position);
+        return;
+      }
+      if (plain && (e.key === "0" || e.key === "a")) {
+        e.preventDefault();
+        pickMode("ALL");
+        return;
+      }
+      if (!result && (e.key === "f" || e.key === "F")) answer("fold");
+      else if (!result && (e.key === "c" || e.key === "C")) answer("call");
+      else if (!result && (e.key === "r" || e.key === "R")) answer("raise");
+      else if (result && (e.key === " " || e.key === "Enter")) {
+        e.preventDefault();
+        next();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [answer, next, pickMode, result, onChart, onGlossary, suspended, question, daily, dailyDone]);
+
+  const accuracy =
+    stats.totalAnswered > 0 ? Math.round((stats.totalCorrect / stats.totalAnswered) * 100) : 0;
+  const handsLabel = stats.totalAnswered === 1 ? "1 hand" : `${stats.totalAnswered} hands`;
+
+  return (
+    <main className="drill-shell mx-auto flex w-full max-w-[440px] flex-col items-center px-4 py-3 text-center sm:min-h-screen sm:max-w-[720px] sm:items-stretch sm:px-6 sm:py-8 sm:text-left">
+      <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 text-[13px] text-[color:var(--graphite)]">
+        <button
+          onClick={goHome}
+          aria-label="Home"
+          className="inline-flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+        >
+          <LogoMark size={28} />
+          <span className="hidden font-bold tracking-[-0.02em] text-[color:var(--ink)] sm:inline">
+            Poker Trainer
+          </span>
+        </button>
+        {stats.currentStreak >= 1 ? (
+          <span
+            key={streakPop}
+            aria-label={`Streak ${stats.currentStreak}`}
+            className={`inline-flex h-7 items-center rounded-full border px-2.5 text-[13px] font-bold tabular-nums ${streakPop > 0 ? "streak-pop" : ""}`}
+            style={{ borderColor: "var(--spruce)", color: "var(--spruce)" }}
+          >
+            ×{stats.currentStreak}
+          </span>
+        ) : null}
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={toggleSound}
+            aria-pressed={soundOn}
+            aria-label={soundOn ? "Mute sound" : "Unmute sound"}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-[4px] border border-[color:var(--bone)] sm:h-11 sm:w-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+            style={{ color: soundOn ? "var(--ink)" : "var(--graphite)" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
+              <path
+                d="M4 9.5h3.5L12 5.5v13L7.5 14.5H4z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinejoin="round"
+              />
+              {soundOn ? (
+                <path
+                  d="M15.5 9.5a4 4 0 0 1 0 5M18 7a7.5 7.5 0 0 1 0 10"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                />
+              ) : (
+                <path
+                  d="M16 9.5l5 5M21 9.5l-5 5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                />
+              )}
+            </svg>
+          </button>
+          <button
+            onClick={() => setSheetOpen(true)}
+            aria-label="Display settings"
+            className="inline-flex h-10 items-center gap-1.5 rounded-[4px] border border-[color:var(--bone)] px-2.5 text-[12px] text-[color:var(--ink)] sm:h-11 sm:px-3 sm:text-[13px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden>
+              <circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+              <path
+                d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
+            </svg>
+            Display
+          </button>
+        </div>
+
+      </div>
+
+      {stats.totalAnswered > 0 ? (
+        <div className="mt-3 flex w-full flex-wrap items-center justify-center gap-2 sm:mt-4 sm:justify-start">
+          <span className="chip inline-flex">{accuracy}% accurate</span>
+          <span className="chip inline-flex gap-1">
+            Streak
+            <span className="text-[13px] font-bold text-[color:var(--ink)]">{stats.currentStreak}</span>
+          </span>
+          <span className="chip inline-flex">{handsLabel}</span>
+        </div>
+      ) : null}
+
+      <div className="mt-3 flex w-full shrink-0 flex-col items-center gap-3 sm:mt-6">
+        {daily ? (
+          dailyDone ? null : (
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-[15px] font-bold text-[color:var(--ink)]">Today&rsquo;s 10</p>
+              <div className="flex w-[min(240px,100%)] gap-1" aria-label={`Progress ${dailyIndex + 1} of ${DAILY_COUNT}`}>
+                {Array.from({ length: DAILY_COUNT }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-1.5 flex-1 rounded-[1px]"
+                    style={{
+                      backgroundColor: i < dailyIndex + 1 ? "var(--ink)" : "var(--bone)",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )
+        ) : (
+        <div
+          role="group"
+          aria-label="Practice mode"
+          className="hidden sm:inline-flex sm:overflow-hidden sm:rounded-[3px] sm:border sm:border-[color:var(--bone)]"
+        >
+          {MODES.map((m) => (
+            <button
+              key={m}
+              onClick={() => pickMode(m)}
+              aria-pressed={m === mode}
+              title={GLOSSARY[m]?.title ?? m}
+              className="inline-flex h-11 shrink-0 snap-start items-center gap-1.5 whitespace-nowrap border border-[color:var(--bone)] px-3 text-[13px] font-medium sm:h-auto sm:border-0 sm:border-r sm:py-1.5 sm:last:border-r-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[color:var(--ink)]"
+              style={
+                m === mode
+                  ? { backgroundColor: "var(--ink)", color: "var(--paper)" }
+                  : { color: "var(--ink)" }
+              }
+            >
+              <SeatIcon kind={m} size={16} />
+              {MODE_LABEL[m] ?? m}
+            </button>
+          ))}
+        </div>
+        )}
+        {!daily ? (
+          <label className="grid w-full max-w-[240px] grid-cols-[auto_minmax(0,1fr)] items-center gap-2 text-[12px] text-[color:var(--graphite)] sm:hidden">
+            <span>Mode</span>
+            <select
+              aria-label="Practice mode"
+              value={mode}
+              onChange={(event) => pickMode(event.target.value as Mode)}
+              className="h-10 min-w-0 rounded-[4px] border border-[color:var(--bone)] bg-[color:var(--paper)] px-3 text-[13px] font-medium text-[color:var(--ink)]"
+            >
+              {MODES.map((m) => (
+                <option key={m} value={m}>{MODE_LABEL[m] ?? m}</option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+        {!daily && display.captions ? (
+          <p className="max-w-full text-center text-[13px] text-[color:var(--graphite)]">
+            {GLOSSARY[mode]?.caption ?? ""}
+          </p>
+        ) : null}
+
+        {!daily && mode === "LEAKS" && leaks.length === 0 ? (
+          <p className="text-[13px] text-[color:var(--graphite)]">
+            Play a round first — leaks appear after misses
+          </p>
+        ) : null}
+      </div>
+
+      <div className="drill-body flex min-h-0 w-full flex-1 flex-col">
+      {dailyDone ? (
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto py-3 sm:mt-16 sm:block">
+          <p className="text-[13px] text-[color:var(--graphite)]">Today&rsquo;s 10 &mdash; {dateKey}</p>
+          <p className="mt-2 text-[48px] sm:text-[64px] font-bold leading-none tracking-[-0.03em] tabular-nums text-[color:var(--ink)]">
+            {dailyScore}/10
+          </p>
+          <p className="mt-4 max-w-[42ch] text-center text-[15px] text-[color:var(--graphite)]">
+            {dailyScore === 10
+              ? "Clean sweep. Every open matched the chart."
+              : dailyScore >= 8
+                ? "Solid round. A couple of borderline spots to review in the charts."
+                : dailyScore >= 5
+                  ? "Half the spots landed. Drill the seats that tripped you up."
+                  : "Rough round — open the charts and work one position at a time."}
+          </p>
+          <div className="mt-8 flex w-full flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4">
+            <Button variant="primary" size="lg" className="h-12 w-full sm:h-[56px] sm:w-[200px]" onClick={playAgain}>
+              Play again
+            </Button>
+            <Button variant="secondary" size="lg" className="h-12 w-full sm:h-[56px] sm:w-[200px]" onClick={goHome}>
+              Back home
+            </Button>
+
+          </div>
+        </div>
+      ) : (
+      <>
+       <div className="mt-3 flex min-h-0 shrink flex-col items-center sm:mt-10">
+         <div className="flex flex-col items-center gap-3">
+           {display.table ? <SeatRing active={question.prompt.position} width={isPhone ? 190 : 300} hoverHelp={display.hoverHelp} /> : null}
+          <Tooltip
+            title={GLOSSARY['FOLDED_TO_YOU']!.title}
+            text={GLOSSARY['FOLDED_TO_YOU']!.tooltip}
+            enabled={display.hoverHelp}
+          >
+            <span className="cursor-help text-[13px] text-[color:var(--graphite)] underline decoration-dotted decoration-[color:var(--bone)] underline-offset-4">
+              {question.prompt.context}
+            </span>
+          </Tooltip>
+        </div>
+
+        {/* Hero seat badge — always visible, even when the full table is off. */}
+        <div className="mt-2 flex flex-col items-center gap-0.5 sm:mt-3">
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[13px] font-semibold text-[color:var(--ink)]"
+            style={{ borderColor: "var(--bone)", backgroundColor: "var(--paper)" }}
+          >
+            <SeatIcon kind={question.prompt.position} size={16} />
+            You · {question.prompt.position}
+          </span>
+          <span className="max-w-[220px] truncate text-center text-[11px] text-[color:var(--graphite)] sm:hidden">
+            {GLOSSARY[question.prompt.position]?.title ?? question.prompt.position}
+          </span>
+          <span className="hidden max-w-[280px] text-center text-[12px] text-[color:var(--graphite)] sm:block">
+            {GLOSSARY[question.prompt.position]?.caption ?? GLOSSARY[question.prompt.position]?.tooltip ?? ""}
+          </span>
+        </div>
+
+        <div
+          key={`${question.prompt.hand}-${seed}`}
+            className={`cards-3d mt-3 flex items-center justify-center sm:mt-6 ${
+            pressed === "raise" ? "cards-raised-3d" : pressed ? "cards-folded-3d" : ""
+          } cards-stage ${pressed ? "" : "cards-settle"}`}
+        >
+          <DealtCard
+            rank={cards[0]!.rank}
+            suit={cards[0]!.suit}
+            tilt={-4}
+            delay={0}
+             width={isPhone ? 92 : 128}
+          />
+          <div className={isPhone ? "-ml-4" : "-ml-6"}>
+            <DealtCard
+              rank={cards[1]!.rank}
+              suit={cards[1]!.suit}
+              tilt={5}
+              delay={70}
+               width={isPhone ? 92 : 128}
+            />
+          </div>
+        </div>
+
+         <p className="mt-3 text-[12px] text-[color:var(--graphite)] sm:mt-4 sm:text-[13px]">
+          <Tooltip title={question.prompt.hand} text={describeHand(question.prompt.hand)} enabled={display.hoverHelp}>
+            <span className="cursor-help underline decoration-dotted decoration-[color:var(--bone)] underline-offset-4">
+              {question.prompt.hand}
+            </span>
+          </Tooltip>
+        </p>
+      </div>
+
+      {!result || flash ? (
+        <div
+            className="action-dock z-30 mt-auto grid w-full shrink-0 grid-cols-3 gap-3 border-t pt-3 sm:static sm:mt-10 sm:flex sm:justify-center sm:gap-4 sm:border-0 sm:pt-0"
+          style={{ backgroundColor: "var(--paper)", borderColor: "var(--bone)" }}
+        >
+          <Button autoFocus variant="fold" size="lg" className={`h-[52px] w-full text-[16px] sm:h-[56px] sm:w-[160px] sm:text-[17px] ${flash === "fold" ? "action-success-flash" : ""}`} onClick={() => answer("fold")}>
+            Fold <span className="hidden sm:inline-flex"><Keycap>F</Keycap></span>
+          </Button>
+          <Button variant="call" size="lg" className={`h-[52px] w-full text-[16px] sm:h-[56px] sm:w-[160px] sm:text-[17px] ${flash === "call" ? "action-success-flash" : ""}`} onClick={() => answer("call")}>
+            Call <span className="hidden sm:inline-flex"><Keycap>C</Keycap></span>
+          </Button>
+          <Button variant="raise" size="lg" className={`h-[52px] w-full text-[16px] sm:h-[56px] sm:w-[160px] sm:text-[17px] ${flash === "raise" ? "action-success-flash" : ""}`} onClick={() => answer("raise")}>
+            Raise <span className="hidden sm:inline-flex"><Keycap>R</Keycap></span>
+          </Button>
+        </div>
+
+      ) : (
+        <div className="result-fade-up mt-3 flex min-h-0 w-full min-w-0 flex-1 flex-col items-center overflow-y-auto overscroll-contain pb-3 sm:mt-8 sm:overflow-visible sm:pb-0">
+          <div
+            className={`relative flex items-center gap-3 ${result.correct ? "" : "verdict-shake"}`}
+          >
+            {result.correct ? (
+              <span
+                aria-hidden
+                className="xp-float absolute -top-5 right-0 text-[13px] font-bold tabular-nums text-[color:var(--spruce)]"
+              >
+                +{XP_CORRECT} XP
+              </span>
+            ) : null}
+            <span
+              aria-hidden
+              className="verdict-pop flex h-8 w-8 items-center justify-center rounded-full text-[17px]"
+              style={
+                {
+                  backgroundColor: result.correct ? "var(--spruce)" : "var(--ink)",
+                  color: "var(--paper)",
+                  "--pop-rot": result.correct ? "8deg" : "-8deg",
+                } as React.CSSProperties
+              }
+            >
+              {result.correct ? "✓" : "✕"}
+            </span>
+            <p className="text-[19px] font-bold tracking-[-0.01em] text-[color:var(--ink)] sm:text-[24px]">
+              {result.correct
+                ? praise(result.chosen, question.prompt.position)
+                : `Not quite — best is ${result.best}`}
+            </p>
+          </div>
+           <p className="mt-1 max-w-[46ch] text-center text-[13px] text-[color:var(--graphite)] sm:mt-2 sm:text-[14px]">
+            <StreamText text={result.explanation} charsPerTick={2} tickMs={9} />
+          </p>
+
+
+          {display.insight ? (
+            <InsightCard
+              hand={question.prompt.hand}
+              position={question.prompt.position}
+              chosen={result.chosen}
+            />
+          ) : null}
+
+
+          {newBadges.length > 0 ? (
+            <div className="insight-in mt-3 flex flex-wrap justify-center gap-2">
+              {newBadges.map((b) => (
+                <span
+                  key={b}
+                  className="chip"
+                  style={{ borderColor: "var(--spruce)", color: "var(--spruce)" }}
+                >
+                  Unlocked — {BADGES[b]?.label ?? b}
+                </span>
+              ))}
+            </div>
+          ) : null}
+
+          {!result.correct && !daily ? (
+            <button
+              onClick={() => pickMode(question.prompt.position)}
+              className="mt-3 text-[13px] text-[color:var(--graphite)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ink)]"
+            >
+              Practice this seat — {question.prompt.position}
+            </button>
+          ) : null}
+
+
+          {result.visual && display.rangeAfter ? (
+            <div className="mt-7 flex w-full min-w-0 justify-center">
+              <RangeGrid range={result.visual.range} highlight={result.visual.highlight} reveal />
+            </div>
+          ) : null}
+
+
+          <Button autoFocus variant="primary" className="sticky bottom-0 mt-3 min-h-[48px] w-full shrink-0 sm:static sm:mt-8 sm:w-auto" onClick={() => next()}>
+            Next hand <span className="fine-only"><Keycap>Space</Keycap></span>
+          </Button>
+
+        </div>
+      )}
+
+      </>
+      )}
+      </div>
+
+      <div className="fine-only mt-auto flex flex-wrap justify-center gap-5 pt-10 text-[12px] text-[color:var(--graphite)]">
+        <span className="inline-flex items-center gap-2">
+          <Keycap>F</Keycap> fold
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <Keycap>C</Keycap> call
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <Keycap>R</Keycap> raise
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <Keycap>Space</Keycap> next
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <Keycap>?</Keycap> charts
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <Keycap>G</Keycap> glossary
+        </span>
+      </div>
+
+      {sheetOpen ? (
+        <DisplaySheet
+          display={display}
+          onChange={setDisplay}
+          onClose={() => setSheetOpen(false)}
+          links={[
+            { label: "Glossary", onClick: () => { setSheetOpen(false); onGlossary(); } },
+            {
+              label: "Charts",
+              onClick: () => {
+                setSheetOpen(false);
+                onChart(question.prompt.position);
+              },
+            },
+          ]}
+        />
+      ) : null}
+
+
+    </main>
+  );
+}
