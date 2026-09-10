@@ -28,6 +28,7 @@ interface Props {
 export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossary }: Props) {
   const today = todayKey();
   const todayBest = stats.dailyBest?.[today];
+  const dailyDone = typeof todayBest === "number";
   const played = stats.totalAnswered > 0;
   const accuracy = played ? Math.round((stats.totalCorrect / stats.totalAnswered) * 100) : 0;
   const btn = CHARTS.BTN;
@@ -78,8 +79,31 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
               Start drill
             </Button>
             <div className="mx-auto grid w-full max-w-[320px] grid-cols-2 gap-3 lg:mx-0 lg:flex lg:max-w-none lg:gap-3">
-              <Button variant="secondary" size="sm" className="min-h-[44px] w-full px-2 text-[13px] text-[color:var(--graphite)] hover:text-[color:var(--ink)] lg:w-auto lg:px-5" onClick={onDaily}>
-                Today&rsquo;s 10
+              <Button
+                variant="secondary"
+                size="sm"
+                className="min-h-[52px] w-full flex-col gap-1.5 px-2 py-2 text-[13px] text-[color:var(--graphite)] hover:text-[color:var(--ink)] lg:w-auto lg:px-5"
+                onClick={onDaily}
+                style={dailyDone ? { borderColor: "var(--spruce)" } : undefined}
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  Today&rsquo;s 10
+                  {dailyDone ? (
+                    <span className="font-bold text-[color:var(--spruce)]">✓</span>
+                  ) : null}
+                </span>
+                <span aria-hidden className="flex w-full max-w-[120px] gap-[2px]">
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <span
+                      key={i}
+                      className="h-1 flex-1 rounded-[1px]"
+                      style={{
+                        backgroundColor:
+                          dailyDone && i < (todayBest ?? 0) ? "var(--spruce)" : "var(--bone)",
+                      }}
+                    />
+                  ))}
+                </span>
               </Button>
               <Button variant="secondary" size="sm" className="min-h-[44px] w-full px-2 text-[13px] text-[color:var(--graphite)] hover:text-[color:var(--ink)] lg:w-auto lg:px-5" onClick={onChart}>
                 Charts
@@ -100,12 +124,13 @@ export function Home({ stats, onStart, onDaily, onStartLeaks, onChart, onGlossar
 
 
 
-          {typeof todayBest === "number" ? (
-            <p className="order-5 mt-3 text-[13px] text-[color:var(--graphite)] lg:order-none">
-              Today&rsquo;s best{" "}
-              <span className="text-[15px] font-bold tabular-nums text-[color:var(--ink)]">
-                {todayBest}/10
-              </span>
+          {dailyDone ? (
+            <p
+              className="chip insight-in order-5 mt-3 inline-flex gap-1.5 lg:order-none"
+              style={{ borderColor: "var(--spruce)", color: "var(--spruce)" }}
+            >
+              ✓ Today&rsquo;s 10 complete · best{" "}
+              <span className="font-bold tabular-nums">{todayBest}/10</span>
             </p>
           ) : null}
 

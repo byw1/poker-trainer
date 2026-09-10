@@ -18,7 +18,14 @@ import { useDisplay } from "@/lib/display";
 import { DisplaySheet } from "./DisplaySheet";
 
 
-import { BADGES, type BadgeId } from "@/lib/progress";
+import { BADGES, XP_CORRECT, type BadgeId } from "@/lib/progress";
+
+/** Short beginner-friendly praise, varied lightly by action and seat. */
+function praise(action: Action, position: Position): string {
+  if (action === "fold") return position === "UTG" || position === "MP" ? "Good fold" : "Solid fold";
+  if (action === "raise") return position === "BTN" || position === "SB" ? "Nice open" : "Clean raise";
+  return "Nice";
+}
 
 const SUITS: PlayingCardSuit[] = ["spades", "hearts", "diamonds", "clubs"];
 
@@ -151,6 +158,18 @@ export function DrillScreen({
   const [result, setResult] = useState<Result | null>(null);
   const [pressed, setPressed] = useState<Action | null>(null);
   const [newBadges, setNewBadges] = useState<BadgeId[]>([]);
+  /** Chosen action briefly flashed spruce before the result panel takes over. */
+  const [flash, setFlash] = useState<Action | null>(null);
+  const [streakPop, setStreakPop] = useState(0);
+  const prevStreak = useRef(stats.currentStreak);
+
+  useEffect(() => {
+    const s = stats.currentStreak;
+    if (s > prevStreak.current && (s === 3 || s === 5 || s === 10)) {
+      setStreakPop((n) => n + 1);
+    }
+    prevStreak.current = s;
+  }, [stats.currentStreak]);
   const { display, set: setDisplay } = useDisplay();
   const [sheetOpen, setSheetOpen] = useState(false);
   const soundOn = display.sound;
@@ -174,7 +193,7 @@ export function DrillScreen({
   // Deal ticks + the paper flip, matching the card animation timings.
   useEffect(() => {
     sound.deal();
-    const t = window.setTimeout(() => sound.flip(), 240);
+    const t = window.setTimeout(() => sound.flip(), isPhone ? 195 : 240);
     return () => window.clearTimeout(t);
   }, [question]);
   const cards = handCards(question.prompt.hand, seed);
@@ -188,6 +207,10 @@ export function DrillScreen({
       else sound.fold();
       const r = drill.checkAnswer(question, action);
       setResult(r);
+      if (r.correct) {
+        setFlash(action);
+        window.setTimeout(() => setFlash(null), 420);
+      }
       window.setTimeout(() => (r.correct ? sound.correct() : sound.incorrect()), 180);
       let updated = recordAnswer(
         stats,
@@ -313,6 +336,16 @@ export function DrillScreen({
             Poker Trainer
           </span>
         </button>
+        {stats.currentStreak >= 1 ? (
+          <span
+            key={streakPop}
+            aria-label={`Streak ${stats.currentStreak}`}
+            className={`inline-flex h-7 items-center rounded-full border px-2.5 text-[13px] font-bold tabular-nums ${streakPop > 0 ? "streak-pop" : ""}`}
+            style={{ borderColor: "var(--spruce)", color: "var(--spruce)" }}
+          >
+            ×{stats.currentStreak}
+          </span>
+        ) : null}
         <div className="ml-auto flex items-center gap-2">
           <button
             onClick={toggleSound}
@@ -499,7 +532,7 @@ export function DrillScreen({
           key={`${question.prompt.hand}-${seed}`}
             className={`cards-3d mt-3 flex items-center justify-center sm:mt-6 ${
             pressed === "raise" ? "cards-raised-3d" : pressed ? "cards-folded-3d" : ""
-          } cards-stage`}
+          } cards-stage ${pressed ? "" : "cards-settle"}`}
         >
           <DealtCard
             rank={cards[0]!.rank}
@@ -528,18 +561,18 @@ export function DrillScreen({
         </p>
       </div>
 
-      {!result ? (
+      {!result || flash ? (
         <div
             className="action-dock z-30 mt-auto grid w-full shrink-0 grid-cols-3 gap-3 border-t pt-3 sm:static sm:mt-10 sm:flex sm:justify-center sm:gap-4 sm:border-0 sm:pt-0"
           style={{ backgroundColor: "var(--paper)", borderColor: "var(--bone)" }}
         >
-          <Button autoFocus variant="fold" size="lg" className="h-[52px] w-full text-[16px] sm:h-[56px] sm:w-[160px] sm:text-[17px]" onClick={() => answer("fold")}>
+          <Button autoFocus variant="fold" size="lg" className={`h-[52px] w-full text-[16px] sm:h-[56px] sm:w-[160px] sm:text-[17px] ${flash === "fold" ? "action-success-flash" : ""}`} onClick={() => answer("fold")}>
             Fold <span className="hidden sm:inline-flex"><Keycap>F</Keycap></span>
           </Button>
-          <Button variant="call" size="lg" className="h-[52px] w-full text-[16px] sm:h-[56px] sm:w-[160px] sm:text-[17px]" onClick={() => answer("call")}>
+          <Button variant="call" size="lg" className={`h-[52px] w-full text-[16px] sm:h-[56px] sm:w-[160px] sm:text-[17px] ${flash === "call" ? "action-success-flash" : ""}`} onClick={() => answer("call")}>
             Call <span className="hidden sm:inline-flex"><Keycap>C</Keycap></span>
           </Button>
-          <Button variant="raise" size="lg" className="h-[52px] w-full text-[16px] sm:h-[56px] sm:w-[160px] sm:text-[17px]" onClick={() => answer("raise")}>
+          <Button variant="raise" size="lg" className={`h-[52px] w-full text-[16px] sm:h-[56px] sm:w-[160px] sm:text-[17px] ${flash === "raise" ? "action-success-flash" : ""}`} onClick={() => answer("raise")}>
             Raise <span className="hidden sm:inline-flex"><Keycap>R</Keycap></span>
           </Button>
         </div>
@@ -547,8 +580,16 @@ export function DrillScreen({
       ) : (
         <div className="result-fade-up mt-3 flex min-h-0 w-full min-w-0 flex-1 flex-col items-center overflow-y-auto overscroll-contain pb-3 sm:mt-8 sm:overflow-visible sm:pb-0">
           <div
-            className={`flex items-center gap-3 ${result.correct ? "" : "verdict-shake"}`}
+            className={`relative flex items-center gap-3 ${result.correct ? "" : "verdict-shake"}`}
           >
+            {result.correct ? (
+              <span
+                aria-hidden
+                className="xp-float absolute -top-5 right-0 text-[13px] font-bold tabular-nums text-[color:var(--spruce)]"
+              >
+                +{XP_CORRECT} XP
+              </span>
+            ) : null}
             <span
               aria-hidden
               className="verdict-pop flex h-8 w-8 items-center justify-center rounded-full text-[17px]"
@@ -563,7 +604,9 @@ export function DrillScreen({
               {result.correct ? "✓" : "✕"}
             </span>
             <p className="text-[19px] font-bold tracking-[-0.01em] text-[color:var(--ink)] sm:text-[24px]">
-              {result.correct ? "Correct" : `Incorrect — best is ${result.best}`}
+              {result.correct
+                ? praise(result.chosen, question.prompt.position)
+                : `Not quite — best is ${result.best}`}
             </p>
           </div>
            <p className="mt-1 max-w-[46ch] text-center text-[13px] text-[color:var(--graphite)] sm:mt-2 sm:text-[14px]">

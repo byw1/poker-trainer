@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 export const buttonVariants = cva(
   `inline-flex items-center justify-center gap-3 font-medium select-none rounded-full
    transition-[transform,background-color,border-color,opacity,box-shadow] duration-150 ease-out
-   press-depth disabled:opacity-50 disabled:pointer-events-none
+   press-depth button-hover-lift disabled:opacity-50 disabled:pointer-events-none
    focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
    focus-visible:outline-[color:var(--ink)]
    motion-reduce:transition-none`,

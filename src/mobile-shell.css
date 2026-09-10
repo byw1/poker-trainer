@@ -35,7 +35,12 @@
   }
 
   .card-deal-3d {
-    animation-duration: 260ms;
+    animation-duration: 210ms;
+  }
+
+  .card-flipper {
+    animation-duration: 230ms;
+    animation-delay: calc(var(--card-delay, 0ms) + 160ms);
   }
 }
 
